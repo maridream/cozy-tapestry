@@ -33,7 +33,7 @@ Then open <http://localhost:5173>. In VS Code you can also press **Cmd+Shift+B**
 docs/               Plan, architecture and one folder per build phase
 src/types.ts        Shared data contracts
 src/config/         Crochet numbers (gauge, yarn use, sizes) and wizard steps
-src/app/            App shell, state, navigation          (Phase 1)
+src/app/            App shell, state, navigation, theme   (Phase 1)
 src/steps/          One screen per wizard step             (Phases 1–4)
 src/segmentation/   Background removal                     (Phase 2)
 src/engine/         Photo → stitch chart → rows → yarn     (Phase 3)

@@ -1,28 +1,53 @@
-import { WIZARD_STEPS } from '../config/steps';
+import type { ComponentType } from 'react';
+import { PlaceholderStep } from '../steps/PlaceholderStep';
+import { UploadStep } from '../steps/upload/UploadStep';
+import type { WizardStepId } from '../types';
+import { Header } from './Header';
+import { AppProvider, useApp } from './state';
+import { StepLayout } from './StepLayout';
+import { Stepper } from './Stepper';
+import './App.css';
 
-/**
- * SCAFFOLD PLACEHOLDER — replaced in Phase 1 (docs/phase-1/README.md).
- *
- * Shows the planned wizard steps so the dev server has something to render.
- * Phase 1 turns this into the real shell: header, theme toggle, stepper,
- * Back/Next navigation and the Upload step.
- */
+export const REPO_URL = 'https://github.com/maridream/cozy-tapestry';
+
+/** Which screen each wizard step shows. Later phases replace the placeholders. */
+const STEP_SCREENS: Record<WizardStepId, ComponentType> = {
+  upload: UploadStep,
+  cutout: PlaceholderStep,
+  setup: PlaceholderStep,
+  colors: PlaceholderStep,
+  pattern: PlaceholderStep,
+};
+
 export function App() {
   return (
-    <main className="scaffold">
-      <h1>Cozy Tapestry</h1>
-      <p>
-        Turn a photo of your pet into a crochet pattern. This is the project
-        scaffold — the app itself is built phase by phase (see <code>docs/</code>).
-      </p>
-      <ol className="scaffold-steps">
-        {WIZARD_STEPS.map((step) => (
-          <li key={step.id}>
-            <strong>{step.title}</strong> — {step.summary}
-            <span className="scaffold-phase">Phase {step.phase}</span>
-          </li>
-        ))}
-      </ol>
-    </main>
+    <AppProvider>
+      <Shell />
+    </AppProvider>
+  );
+}
+
+function Shell() {
+  const { state } = useApp();
+  const Screen = STEP_SCREENS[state.step];
+  return (
+    <div className="app">
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
+      <Header />
+      <Stepper />
+      <main id="main" className="app__main">
+        <StepLayout>
+          <Screen key={state.step} />
+        </StepLayout>
+      </main>
+      <footer className="app__footer">
+        <p>Your photo stays on your device.</p>
+        <a href={REPO_URL} target="_blank" rel="noreferrer">
+          Cozy Tapestry on GitHub
+        </a>
+      </footer>
+    </div>
   );
 }

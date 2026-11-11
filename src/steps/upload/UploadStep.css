@@ -1,0 +1,146 @@
+.upload__zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-4);
+  border: 3px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-sunken);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.upload__zone:hover,
+.upload__zone.is-dragging {
+  border-color: var(--color-accent);
+}
+
+.upload__zone.is-dragging {
+  background: var(--color-surface);
+}
+
+.upload__zone.has-error {
+  border-color: var(--color-danger);
+}
+
+.upload__zone:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+.upload__zone[aria-busy='true'] {
+  cursor: progress;
+}
+
+.upload__title {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.upload__button {
+  pointer-events: none;
+}
+
+.upload__zone:hover .upload__button {
+  background: var(--color-accent-hover);
+}
+
+.upload__error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-width: 34rem;
+  margin: var(--space-2) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 2px solid var(--color-danger);
+  color: var(--color-danger);
+  font-weight: 700;
+  text-align: left;
+}
+
+.upload__error-icon {
+  flex: none;
+  margin-top: 0.15em;
+}
+
+.upload__tips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.upload__tips li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.upload__tips li::before {
+  content: '';
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-secondary);
+}
+
+/* --- after a photo is chosen --- */
+
+.upload__chosen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 3px solid transparent;
+  border-radius: var(--radius-lg);
+  transition: border-color 0.15s;
+}
+
+.upload__chosen.is-dragging {
+  border-color: var(--color-accent);
+  border-style: dashed;
+}
+
+.upload__preview canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 420px;
+  width: auto;
+  height: auto;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.upload__chosen-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+}
+
+.upload__filename {
+  margin: 0;
+  font-weight: 700;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.upload__change {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

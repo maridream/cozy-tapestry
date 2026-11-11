@@ -107,16 +107,26 @@ Background removal, any pattern settings UI, anything on steps 2–5 beyond plac
 
 ## Acceptance checklist
 
-- [ ] `npm run dev` shows the header, stepper and upload step in the cottage theme on a light-mode device and fireside on a dark-mode device.
-- [ ] The toggle switches themes instantly, survives a reload, and there is no flash of the wrong theme on load.
-- [ ] Drag-and-drop and the button both load a photo; a phone-rotated photo shows upright.
-- [ ] A `.txt` file and a too-large file each show their friendly message; the app stays usable.
-- [ ] Next/Back and the stepper move between steps; steps beyond the photo are blocked until a photo exists.
-- [ ] Everything is usable with the keyboard alone; focus is always visible.
-- [ ] At 360 px wide nothing overflows horizontally and the stepper is in its compact form.
-- [ ] Text contrast passes WCAG AA in both themes.
-- [ ] `npm run typecheck`, `npm test`, `npm run build` pass.
+- [x] `npm run dev` shows the header, stepper and upload step in the cottage theme on a light-mode device and fireside on a dark-mode device.
+- [x] The toggle switches themes instantly, survives a reload, and there is no flash of the wrong theme on load.
+- [x] Drag-and-drop and the button both load a photo; a phone-rotated photo shows upright.
+- [x] A `.txt` file and a too-large file each show their friendly message; the app stays usable.
+- [x] Next/Back and the stepper move between steps; steps beyond the photo are blocked until a photo exists.
+- [x] Everything is usable with the keyboard alone; focus is always visible.
+- [x] At 360 px wide nothing overflows horizontally and the stepper is in its compact form.
+- [x] Text contrast passes WCAG AA in both themes.
+- [x] `npm run typecheck`, `npm test`, `npm run build` pass.
 
 ## Handoff notes
 
-_(Worker: record anything Phase 2 needs to know — component names, deviations, font package versions.)_
+- **State** (`src/app/state.tsx`): `useApp()` gives `{ state, dispatch }`. Action creators `setPhoto`, `clearPhoto`, `goToStep`, `next`, `back` are exported next to the reducer (`appReducer`, `initialState`, `DEFAULT_SETTINGS`). Add new actions to the `AppAction` union.
+- **Step completion lives in one place:** `isStepComplete()` in `state.tsx`. Phase 1 marks `cutout`/`setup`/`colors`/`pattern` complete once a photo exists — **Phase 2 must change `cutout` to require `state.mask`**, and later phases their own steps. Also update `nextBlockedReason()` with a friendly reason for each step (shown beside the disabled Next button).
+- **Screens:** `STEP_SCREENS` in `src/app/App.tsx` maps each step id to a component; swap `PlaceholderStep` for the real screen. `StepLayout` already renders the heading, helper text and Back/Next footer, so a step screen renders only its body. Focus moves to the step heading on step change.
+- **Components** (`src/components/`): `Button` (`variant="primary" | "secondary" | "quiet"`, defaults to `type="button"`), `Card`, `Segmented` (generic radio group: `legend`, `name`, `options`, `value`, `onChange`), `Slider` (`label`, `value`, `min`, `max`, `step`, `onChange`, `format`, `hint`), `Field` (+ `fieldDescribedBy()` helper). Global `.visually-hidden` class is in `base.css`.
+- **Photo:** `state.photo` is `ImageData`, upright, longest side ≤ 2048 px, transparency flattened onto white. `loadPhoto()` in `src/steps/upload/loadPhoto.ts`.
+- **Theme:** `src/app/theme.ts` (`applyTheme`, `getSavedTheme`). `index.html` applies a saved theme before first paint and keeps `theme-color` in sync.
+- **Fonts:** `@fontsource-variable/fraunces` 5.3.0 and `@fontsource-variable/nunito` 5.3.0 (both OFL-1.1), imported in `main.tsx`.
+- **Deviation — colors:** cottage `--color-accent` → `#a85230`, `--color-accent-hover` → `#8c4326`, `--color-text-muted` → `#6b5b50` so text meets WCAG AA (terracotta buttons were 4.37:1, muted on sunken 4.43:1). Fireside unchanged. Lowest rendered text contrast is now 5.03:1.
+- **Footer link** points at the real repo, https://github.com/maridream/cozy-tapestry (`REPO_URL` in `App.tsx`).
+- **Dev server:** `.claude/launch.json` has a second config, `cozy-tapestry-alt`, on port 5174 for when 5173 is already taken.
+- Not verified on real phone hardware (camera picker, real HEIC); verified in Chromium with generated files, including an EXIF-rotated JPEG.

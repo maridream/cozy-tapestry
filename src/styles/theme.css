@@ -34,9 +34,9 @@
   --color-surface-sunken: #efe4d2;
   --color-border: #dccbb2;
   --color-text: #3b2f25;
-  --color-text-muted: #75655a;
-  --color-accent: #b85c38; /* terracotta */
-  --color-accent-hover: #9f4c2c;
+  --color-text-muted: #6b5b50; /* tuned in Phase 1 for AA on sunken */
+  --color-accent: #a85230; /* terracotta, tuned in Phase 1 for AA */
+  --color-accent-hover: #8c4326;
   --color-on-accent: #fffaf2;
   --color-secondary: #7d8f69; /* sage */
   --color-focus: #2f6f8f;

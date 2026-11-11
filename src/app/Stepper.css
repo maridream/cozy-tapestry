@@ -1,0 +1,125 @@
+.stepper__list {
+  display: flex;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: none;
+}
+
+.stepper__item {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* connecting line between steps */
+.stepper__item + .stepper__item::before {
+  content: '';
+  flex: 0 0 var(--space-4);
+  height: 2px;
+  margin-right: var(--space-2);
+  background: var(--color-border);
+}
+
+.stepper__step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+button.stepper__step {
+  cursor: pointer;
+}
+
+button.stepper__step:hover {
+  background: var(--color-surface-sunken);
+}
+
+.stepper__badge {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.stepper__title {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stepper__item--current .stepper__badge {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.stepper__item--done .stepper__badge {
+  background: var(--color-secondary);
+  border-color: var(--color-secondary);
+  color: var(--color-surface);
+}
+
+.stepper__item--locked .stepper__step {
+  color: var(--color-text-muted);
+}
+
+.stepper__item--locked .stepper__badge {
+  background: var(--color-surface-sunken);
+}
+
+.stepper__item--locked .stepper__title {
+  font-weight: 600;
+}
+
+.stepper__compact {
+  display: none;
+}
+
+.stepper__compact-text {
+  margin: 0 0 var(--space-2);
+  font-weight: 700;
+}
+
+.stepper__bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.stepper__bar-fill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: inherit;
+  transition: width 0.25s ease;
+}
+
+@media (max-width: 760px) {
+  .stepper__list {
+    display: none;
+  }
+
+  .stepper__compact {
+    display: block;
+  }
+}

@@ -1,4 +1,4 @@
-/* Global base styles. Phase 1 extends this; scaffold-* rules are removed with the placeholder App. */
+/* Global base styles. */
 
 *,
 *::before,
@@ -8,15 +8,29 @@
 
 html {
   color-scheme: light dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+:root[data-theme='cottage'] {
+  color-scheme: light;
+}
+
+:root[data-theme='fireside'] {
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
-  background: var(--color-bg);
+  background-color: var(--color-bg);
+  /* A very faint woven texture: two crossing hairline stripes tinted from the text color. */
+  background-image:
+    repeating-linear-gradient(45deg, color-mix(in srgb, var(--color-text) 3.5%, transparent) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--color-text) 3.5%, transparent) 0 1px, transparent 1px 7px);
   color: var(--color-text);
   font-family: var(--font-body);
   font-size: 17px;
   line-height: 1.55;
+  overflow-wrap: break-word;
 }
 
 h1,
@@ -26,29 +40,34 @@ h3 {
   line-height: 1.2;
 }
 
+a {
+  color: var(--color-accent);
+}
+
 :focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
-/* --- scaffold placeholder only --- */
-.scaffold {
-  max-width: var(--content-width);
-  margin: 0 auto;
-  padding: var(--space-6) var(--space-4);
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
-.scaffold-steps li {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-3) var(--space-4);
-  margin-bottom: var(--space-3);
-}
-
-.scaffold-phase {
-  float: right;
-  color: var(--color-text-muted);
-  font-size: 0.85em;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
