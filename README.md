@@ -40,3 +40,7 @@ src/engine/         Photo → stitch chart → rows → yarn     (Phase 3)
 src/export/         PDF export                             (Phase 4)
 tests/              Unit tests
 ```
+
+## License
+
+[GNU AGPL v3.0 or later](LICENSE). You may use, change and share this code, but if you share or host a changed version you must publish its source under the same license. Third-party libraries and models keep their own licenses (listed under "Credits" once added).

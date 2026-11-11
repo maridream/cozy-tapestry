@@ -65,6 +65,8 @@ Candidates known at planning time — **verify the current state of each before 
 
 Coarse edges are acceptable: the largest chart is only a few hundred cells wide, so mask precision beyond that is wasted. Prefer the smaller/faster model when quality is similar.
 
+> **Owner decision (after planning):** the project is **AGPL-3.0-or-later**, so `@imgly/background-removal` (verified AGPL-3.0, v1.7.0, November 2026) is approved — use it unless it fails the other requirements. Still check its model-weights license, and avoid any non-commercial model. Alternatives checked at the same time, for reference: BiRefNet-lite (MIT) is ~115 MB even at fp16; MediaPipe (Apache-2.0) only knows fixed classes.
+
 **Ask the owner** before adopting a library whose license forces a license on the whole project (e.g. AGPL), and record the final choice, version, model name, model size and license in the handoff notes and in the root README under a new "Credits" heading.
 
 Model hosting: if the model files are each under 50 MB, copy them into `public/models/` so the site is self-contained; otherwise load from the library's CDN and note that in the README privacy line ("the helper model is downloaded from …; your photo is not uploaded").

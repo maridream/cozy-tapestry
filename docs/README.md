@@ -32,6 +32,7 @@ Already done by the planner (the scaffold): Vite + React + TypeScript project, t
 | Topic | Decision |
 | --- | --- |
 | Name | **Cozy Tapestry** (repo name `cozy-tapestry`) |
+| License | **AGPL-3.0-or-later** (`LICENSE`), chosen so the plan's preferred background-removal library (`@imgly/background-removal`, AGPL) can be used. Dependencies and models must be AGPL-compatible (MIT, Apache-2.0, BSD, GPL-3.0, AGPL-3.0 are fine; no non-commercial licenses). The footer link to the GitHub source must stay — AGPL requires offering the source to people who use the site. |
 | Form | A website. Runs entirely in the browser; photos are never uploaded to a server. Hosted free on GitHub Pages. |
 | Audience | Pet owners who crochet; not technical. The app must be simple. |
 | Flow | Step-by-step wizard, one thing per screen, Back/Next: **Photo → Cutout → Type & size → Colors → Pattern** |

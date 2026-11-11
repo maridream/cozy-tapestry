@@ -125,4 +125,4 @@ git push
 - Repository: <https://github.com/maridream/cozy-tapestry> (public), default branch `main`.
 - Commit identity is set per-repo (`git config user.name/user.email`), using the owner's GitHub noreply address — not global.
 - The GitHub CLI (`gh`) is installed and signed in as `maridream`, so `git push` works over HTTPS.
-- License not chosen yet — owner decides before Phase 2.
+- License: owner chose **AGPL-3.0-or-later** (`LICENSE` at the repo root, `"license": "AGPL-3.0-or-later"` in package.json) so Phase 2 can use `@imgly/background-removal`.
