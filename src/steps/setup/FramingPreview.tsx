@@ -13,7 +13,7 @@ const clampOffset = (v: number) => Math.max(-MAX_OFFSET, Math.min(MAX_OFFSET, v)
  * The piece in its true proportions with the cut-out pet placed exactly as the
  * pattern engine will place it. Drag (or arrow keys) to move, slider to zoom.
  */
-export function FramingPreview({ gridSpec }: { gridSpec: GridSpec }) {
+export function FramingPreview({ gridSpec, interactive = true }: { gridSpec: GridSpec; interactive?: boolean }) {
   const { state, dispatch } = useApp();
   const { photo, mask, settings } = state;
   const { framing, backgroundHex } = settings;
@@ -98,28 +98,33 @@ export function FramingPreview({ gridSpec }: { gridSpec: GridSpec }) {
   return (
     <div className="framing">
       <div className="framing__stage" ref={wrapRef}>
-        <canvas
-          ref={canvasRef}
-          className="framing__canvas"
-          tabIndex={0}
-          role="img"
-          aria-label="Where your pet sits in the piece. Drag to move, or use the arrow keys."
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={endDrag}
-          onPointerCancel={endDrag}
-          onKeyDown={onKeyDown}
-        />
+        {interactive ? (
+          <canvas
+            ref={canvasRef}
+            className="framing__canvas"
+            tabIndex={0}
+            role="img"
+            aria-label="Where your pet sits in the piece. Drag to move, or use the arrow keys."
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            onKeyDown={onKeyDown}
+          />
+        ) : (
+          <canvas ref={canvasRef} className="framing__canvas framing__canvas--static" role="img" aria-label="Your pet in the shape of the piece" />
+        )}
       </div>
-      <p className="framing__hint">Drag your pet to move it, or click the picture and use the arrow keys.</p>
-      <div className="framing__controls">
+      {!interactive && <p className="framing__hint">You can move and resize your pet, and add a background pattern and text, on the next step.</p>}
+      {interactive && <p className="framing__hint">Drag your pet to move it, or click the picture and use the arrow keys.</p>}
+      {interactive && <div className="framing__controls">
         <div className="framing__zoom">
           <Slider label="Zoom" min={0.5} max={2} step={0.05} value={framing.zoom} onChange={(zoom) => update({ ...framing, zoom })} format={(v) => `${v.toFixed(2)}×`} />
         </div>
         <Button variant="secondary" onClick={() => update({ ...framing, offsetX: 0, offsetY: 0 })} disabled={framing.offsetX === 0 && framing.offsetY === 0}>
           Re-centre
         </Button>
-      </div>
+      </div>}
     </div>
   );
 }

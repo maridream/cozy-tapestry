@@ -1,4 +1,5 @@
 import { YARN_WEIGHT_LABELS } from '../config/crochet';
+import { MOTIFS } from '../engine/motifs';
 import type { Pattern, Technique } from '../types';
 
 /** Words shared by the Pattern page and the PDF, so both say exactly the same thing. */
@@ -35,7 +36,22 @@ export function patternFacts(p: Pattern): [string, string][] {
     ['Hook', `${p.gauge.hookMm} mm (${p.gauge.hookUs})`],
     ['Gauge', gaugeText(p)],
     ['Start', `Chain ${p.foundationChain}`],
+    ...designFacts(p),
   ];
+}
+
+const DIRECTION_WORDS = { across: 'across', down: 'up and down', diagonal: 'diagonal', 'diagonal-reverse': 'diagonal' } as const;
+
+function designFacts(p: Pattern): [string, string][] {
+  const out: [string, string][] = [];
+  const bg = p.settings.background;
+  if (bg && bg.motif !== 'none') {
+    const label = MOTIFS.find((m) => m.id === bg.motif)?.label ?? bg.motif;
+    out.push(['Background', `${label}, ${DIRECTION_WORDS[bg.direction]}, ${bg.sizeIn} in repeat`]);
+  }
+  const texts = (p.settings.texts ?? []).filter((t) => t.text.trim());
+  if (texts.length) out.push(['Text', texts.map((t) => `"${t.text.trim()}"`).join(', ')]);
+  return out;
 }
 
 export const ESTIMATE_NOTE =

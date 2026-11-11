@@ -154,8 +154,8 @@ export function SetupStep() {
       </div>
 
       <div className="setup__preview">
-        <h2 className="setup__preview-title">Position your pet</h2>
-        <FramingPreview gridSpec={gridSpec} />
+        <h2 className="setup__preview-title">Shape of your piece</h2>
+        <FramingPreview gridSpec={gridSpec} interactive={false} />
       </div>
     </div>
   );

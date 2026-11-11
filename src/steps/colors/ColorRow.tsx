@@ -27,6 +27,21 @@ export function ColorRow({ color, share, edited }: { color: YarnColor; share?: n
   };
 
   const isBg = color.role === 'background';
+  if (color.role === 'decoration') {
+    return (
+      <li className="color-row">
+        <span className="color-row__swatch color-row__swatch--fixed" style={{ backgroundColor: color.hex }} aria-hidden="true" />
+        <div className="color-row__main">
+          <span className="color-row__fixed-name">{color.name}</span>
+          <div className="color-row__meta">
+            <span className="color-row__tag">Pattern / text</span>
+            {share !== undefined && <span>{Math.round(share * 100)}%</span>}
+            <span>Change it on the Design step</span>
+          </div>
+        </div>
+      </li>
+    );
+  }
   return (
     <li className="color-row">
       <label className="color-row__swatch" style={{ backgroundColor: hex }}>

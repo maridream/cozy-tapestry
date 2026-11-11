@@ -215,3 +215,14 @@
   font-size: 0.88rem;
   font-weight: 400;
 }
+
+.color-row__swatch--fixed {
+  cursor: default;
+}
+
+.color-row__fixed-name {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+}

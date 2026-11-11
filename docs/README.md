@@ -21,7 +21,8 @@ This folder is the complete plan. Each phase is written so that a worker who has
 | 1 | Cozy app shell: themes, step-by-step wizard, photo upload | [phase-1](phase-1/README.md) | ☑ |
 | 2 | Automatic pet cutout + touch-up brush | [phase-2](phase-2/README.md) | ☑ |
 | 3 | Pattern engine + "Type & size" and "Colors" steps | [phase-3](phase-3/README.md) | ☑ |
-| 4 | Pattern page, PDF export, polish, publish to GitHub Pages | [phase-4](phase-4/README.md) | ☐ |
+| 4 | Pattern page, PDF export, polish, publish to GitHub Pages | [phase-4](phase-4/README.md) | ☑ |
+| 5 | Design step: patterned backgrounds, text, placing the pet (added later) | [phase-5](phase-5/README.md) | ☑ |
 
 Phases must be done in order: each one depends on the one before.
 
@@ -35,7 +36,7 @@ Already done by the planner (the scaffold): Vite + React + TypeScript project, t
 | License | **AGPL-3.0-or-later** (`LICENSE`), chosen so the plan's preferred background-removal library (`@imgly/background-removal`, AGPL) can be used. Dependencies and models must be AGPL-compatible (MIT, Apache-2.0, BSD, GPL-3.0, AGPL-3.0 are fine; no non-commercial licenses). The footer link to the GitHub source must stay — AGPL requires offering the source to people who use the site. |
 | Form | A website. Runs entirely in the browser; photos are never uploaded to a server. Hosted free on GitHub Pages. |
 | Audience | Pet owners who crochet; not technical. The app must be simple. |
-| Flow | Step-by-step wizard, one thing per screen, Back/Next: **Photo → Cutout → Type & size → Colors → Pattern** |
+| Flow | Step-by-step wizard, one thing per screen, Back/Next: **Photo → Cutout → Type & size → Design → Colors → Pattern** (Design added in Phase 5) |
 | Subject | Background is removed automatically; the user can fix the cutout with a keep/erase brush and choose a solid background color. |
 | Simplification | The pet is reduced to a few solid colors (not every tone). Small features like eyes survive only if they are big enough at the chosen size. |
 | Piece types | **Thick blanket** (tapestry single crochet) or **Decorative tapestry**, which has two styles: **full color** (double crochet colorwork) and **filet mesh** (one color, open/filled squares). |

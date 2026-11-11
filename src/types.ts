@@ -8,7 +8,7 @@
 
 // ---------------------------------------------------------------- wizard ---
 
-export type WizardStepId = 'upload' | 'cutout' | 'setup' | 'colors' | 'pattern';
+export type WizardStepId = 'upload' | 'cutout' | 'setup' | 'design' | 'colors' | 'pattern';
 
 // ------------------------------------------------------------- technique ---
 
@@ -84,8 +84,11 @@ export interface YarnColor {
   name: string;
   /** "#rrggbb" */
   hex: string;
-  /** Exactly one palette entry is the background. */
-  role: 'background' | 'subject';
+  /**
+   * Exactly one palette entry is the background. `decoration` = a background-pattern
+   * or text yarn chosen on the Design step (added on top of the pet's colors).
+   */
+  role: 'background' | 'subject' | 'decoration';
   /** True once the user has hand-picked this color; auto-pick must not overwrite it. */
   userEdited: boolean;
   /** The color the app picked from the photo, before any user edit. Used to re-attach edits after a rebuild. */
@@ -168,7 +171,70 @@ export interface Framing {
   offsetY: number;
 }
 
-/** Everything the user chose in the "Type & size" and "Colors" steps. */
+// ---------------------------------------------------------- decoration ---
+
+/** Background motifs. `none` = plain background. */
+export type MotifId =
+  | 'none'
+  | 'dots'
+  | 'stripes'
+  | 'zigzag'
+  | 'checks'
+  | 'hearts'
+  | 'stars'
+  | 'bones'
+  | 'paws'
+  | 'fish'
+  | 'yarn-balls'
+  | 'feathers'
+  | 'seeds'
+  | 'scales'
+  | 'leaves'
+  | 'bubbles'
+  | 'waves'
+  | 'tiger-stripes'
+  | 'leopard-spots'
+  | 'carrots'
+  | 'clover'
+  | 'horseshoes';
+
+/** Which way the motif rows run. */
+export type MotifDirection = 'across' | 'down' | 'diagonal' | 'diagonal-reverse';
+
+export interface BackgroundPattern {
+  motif: MotifId;
+  /** Yarn color of the motif; the plain background uses settings.backgroundHex. */
+  colorHex: string;
+  /** Repeat size in inches (one motif plus its spacing). */
+  sizeIn: number;
+  direction: MotifDirection;
+}
+
+export type TextFont = 'stitch' | 'bold' | 'serif' | 'script' | 'chunky';
+
+export interface TextLayer {
+  id: string;
+  text: string;
+  font: TextFont;
+  /** Letter height in inches. */
+  sizeIn: number;
+  colorHex: string;
+  /** Centre of the text as a fraction of piece width / height (0..1). */
+  x: number;
+  y: number;
+}
+
+/**
+ * Text drawn as cells: a block `cols × rows` (1 = stitch in the text color),
+ * placed in the piece with its centre at the layer's (x, y).
+ */
+export interface TextBlock {
+  cols: number;
+  rows: number;
+  cells: Uint8Array;
+}
+
+/** Everything the user chose in the "Type & size", "Design" and "Colors" steps. */
 export interface PatternSettings {
   technique: Technique;
   yarnWeight: YarnWeight;
@@ -182,6 +248,10 @@ export interface PatternSettings {
   /** 0 = keep every speck, 1 = default, 2 = extra smooth. */
   smoothing: 0 | 1 | 2;
   yardsPerSkein: number;
+  /** Design step: patterned background. */
+  background: BackgroundPattern;
+  /** Design step: text, drawn on top of everything. */
+  texts: TextLayer[];
 }
 
 /** The finished, fully derived pattern shown in the last step and exported to PDF. */

@@ -1,6 +1,7 @@
 import { useEffect, type ComponentType } from 'react';
 import { ColorsStep } from '../steps/colors/ColorsStep';
 import { CutoutStep } from '../steps/cutout/CutoutStep';
+import { DesignStep } from '../steps/design/DesignStep';
 import { PatternStep } from '../steps/pattern/PatternStep';
 import { SetupStep } from '../steps/setup/SetupStep';
 import { UploadStep } from '../steps/upload/UploadStep';
@@ -18,6 +19,7 @@ const STEP_SCREENS: Record<WizardStepId, ComponentType> = {
   upload: UploadStep,
   cutout: CutoutStep,
   setup: SetupStep,
+  design: DesignStep,
   colors: ColorsStep,
   pattern: PatternStep,
 };

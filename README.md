@@ -10,9 +10,10 @@ Turn a photo of your pet into a crochet pattern — a thick blanket or a lighter
 
 1. **Photo** — pick a photo of your pet (JPG or PNG; phone photos are turned upright).
 2. **Cutout** — the app finds your pet and covers the background. Tidy it with the Keep / Erase brush if needed.
-3. **Type & size** — Thick blanket (single crochet) or Decorative tapestry (Full color in double crochet, or Filet mesh), yarn weight, size from 1 × 1 ft to 5 × 8 ft. Drag and zoom to place your pet.
-4. **Colors** — choose 2–8 colors, swap any of them for yarn you already have, and pick how much detail to keep.
-5. **Pattern** — the finished pattern: preview, gauge, starting chain, yarn amounts and skeins, every row written out (`Row 12 (WS): 14 sc cream, 6 sc warm brown, 20 sc cream`), and a PDF with a numbered chart that also works printed in black and white.
+3. **Type & size** — Thick blanket (single crochet) or Decorative tapestry (Full color in double crochet, or Filet mesh), yarn weight, size from 1 × 1 ft to 5 × 8 ft.
+4. **Design** — move and resize your pet anywhere, pick a patterned background (dots, stripes, zigzags, bones, paws, fish, feathers, scales, bubbles, tiger stripes and more — any direction, size and color) and add text in five fonts.
+5. **Colors** — choose 2–8 colors, swap any of them for yarn you already have, and pick how much detail to keep.
+6. **Pattern** — the finished pattern: preview, gauge, starting chain, yarn amounts and skeins, every row written out (`Row 12 (WS): 14 sc cream, 6 sc warm brown, 20 sc cream`), and a PDF with a numbered chart that also works printed in black and white.
 
 US crochet terms throughout.
 
@@ -69,7 +70,7 @@ tests/              Unit tests
 - Background removal: [`@imgly/background-removal`](https://github.com/imgly/background-removal-js) 1.7.0 by IMG.LY (AGPL-3.0), using the ISNet model (quantized, 44 MB) and [ONNX Runtime Web](https://github.com/microsoft/onnxruntime) 1.21.0 (MIT). The model files are served from this site (`public/models/imgly/`).
 - PDF: [jsPDF](https://github.com/parallax/jsPDF) 4.2.1 (MIT).
 - UI: [React](https://react.dev) (MIT), built with [Vite](https://vite.dev) (MIT).
-- Fonts: Fraunces and Nunito via [Fontsource](https://fontsource.org) (SIL Open Font License 1.1).
+- Fonts: Fraunces, Nunito, Pacifico and Bungee via [Fontsource](https://fontsource.org) (SIL Open Font License 1.1).
 
 ## License
 

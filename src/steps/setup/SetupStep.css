@@ -287,3 +287,7 @@
 .framing__zoom {
   flex: 1 1 180px;
 }
+
+.framing__canvas--static {
+  cursor: default;
+}

@@ -9,7 +9,7 @@ import { WIZARD_STEPS } from '../config/steps';
 import { subjectBounds } from '../engine/buildGrid';
 import { validateSize } from '../engine/sizing';
 import { hasMeaningfulSubject } from '../segmentation/mask';
-import type { CutoutImage, Framing, Pattern, PatternSettings, WizardStepId, YarnColor } from '../types';
+import type { BackgroundPattern, CutoutImage, Framing, Pattern, PatternSettings, TextLayer, WizardStepId, YarnColor } from '../types';
 
 // ----------------------------------------------------------------- state ---
 
@@ -38,7 +38,12 @@ export const DEFAULT_SETTINGS: PatternSettings = {
   backgroundHex: DEFAULT_BACKGROUND_HEX,
   smoothing: 1,
   yardsPerSkein: DEFAULT_YARDS_PER_SKEIN[DEFAULT_YARN_WEIGHT],
+  background: { motif: 'none', colorHex: '#b8c4a8', sizeIn: 4, direction: 'across' },
+  texts: [],
 };
+
+/** Most text layers allowed on one piece. */
+export const MAX_TEXTS = 3;
 
 export const initialState: AppState = {
   step: 'upload',
@@ -68,6 +73,10 @@ export type AppAction =
   | { type: 'resetColor'; color: YarnColor }
   | { type: 'setPattern'; pattern: Pattern; from: PatternInputs }
   | { type: 'setYardsPerSkein'; yards: number }
+  | { type: 'setBackground'; partial: Partial<BackgroundPattern> }
+  | { type: 'addText'; layer: TextLayer }
+  | { type: 'updateText'; id: string; partial: Partial<TextLayer> }
+  | { type: 'removeText'; id: string }
   | { type: 'resetAll' };
 
 /** What a pattern was built from; a result for older inputs is ignored. */
@@ -107,6 +116,11 @@ export const setPattern = (pattern: Pattern, from: PatternInputs): AppAction => 
 
 /** Changes skein size and updates skein counts in place (no rebuild needed). */
 export const setYardsPerSkein = (yards: number): AppAction => ({ type: 'setYardsPerSkein', yards });
+export const setBackground = (partial: Partial<BackgroundPattern>): AppAction => ({ type: 'setBackground', partial });
+export const addText = (layer: TextLayer): AppAction => ({ type: 'addText', layer });
+export const updateText = (id: string, partial: Partial<TextLayer>): AppAction => ({ type: 'updateText', id, partial });
+export const removeText = (id: string): AppAction => ({ type: 'removeText', id });
+
 /** "Make another": back to a clean step 1. */
 export const resetAll = (): AppAction => ({ type: 'resetAll' });
 
@@ -145,6 +159,7 @@ export function isStepComplete(state: AppState, stepId: WizardStepId): boolean {
     case 'cutout':
       return state.photo !== null && hasMeaningfulSubject(state.mask);
     case 'setup':
+    case 'design':
       return validateSize(state.settings.size).ok;
     case 'colors':
       return state.pattern !== null;
@@ -286,6 +301,19 @@ function reduce(state: AppState, action: AppAction): AppState {
       };
       return { ...state, settings, pattern };
     }
+    case 'setBackground':
+      return { ...state, settings: { ...state.settings, background: { ...state.settings.background, ...action.partial } }, pattern: null };
+    case 'addText':
+      if (state.settings.texts.length >= MAX_TEXTS) return state;
+      return { ...state, settings: { ...state.settings, texts: [...state.settings.texts, action.layer] }, pattern: null };
+    case 'updateText':
+      return {
+        ...state,
+        settings: { ...state.settings, texts: state.settings.texts.map((t) => (t.id === action.id ? { ...t, ...action.partial } : t)) },
+        pattern: null,
+      };
+    case 'removeText':
+      return { ...state, settings: { ...state.settings, texts: state.settings.texts.filter((t) => t.id !== action.id) }, pattern: null };
     case 'resetAll':
       return initialState;
     case 'goToStep':

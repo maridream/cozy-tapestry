@@ -1,5 +1,6 @@
-import type { CutoutImage, Framing, GridSpec, PatternGrid, PatternSettings, Rgb, YarnColor } from '../types';
+import type { CutoutImage, Framing, GridSpec, PatternGrid, PatternSettings, Rgb, TextBlock, YarnColor } from '../types';
 import { hexToRgb, labDistanceSq, nameColor, rgbToHex, rgbToLab, uniqueNames, type Lab } from './color';
+import { backgroundInk } from './motifs';
 
 /**
  * Photo + mask -> stitch chart. Pure functions, no DOM access (ImageData is
@@ -254,6 +255,7 @@ export function buildPatternGrid(
   gridSpec: GridSpec,
   settings: PatternSettings,
   lockedPalette: YarnColor[] = [],
+  textBlocks: (TextBlock | null)[] = [],
 ): PatternGrid {
   const s = resampleToCells(cutout, gridSpec, settings.framing);
   const { cols, rows } = gridSpec;
@@ -321,8 +323,100 @@ export function buildPatternGrid(
   const cells = new Uint8Array(n);
   for (let j = 0; j < petIdx.length; j++) cells[petIdx[j]] = indexOf[cluster[j]];
 
+  // Smooth the pet only, so thin text strokes and small motifs survive.
   const smoothed = smoothGrid({ cols, rows, cells, palette }, settings.smoothing);
-  return finishPalette(smoothed);
+  return finishPalette(decorate(smoothed, gridSpec, settings, textBlocks));
+}
+
+// ---------------------------------------------------------- decoration ---
+
+/** Which text layer covers each cell (-1 = none). Later layers win. */
+export function placeTextBlocks(gridSpec: GridSpec, settings: PatternSettings, blocks: (TextBlock | null)[]): Int16Array {
+  const { cols, rows } = gridSpec;
+  const out = new Int16Array(cols * rows).fill(-1);
+  settings.texts.forEach((layer, t) => {
+    const b = blocks[t];
+    if (!b || !b.cols) return;
+    const c0 = Math.round(layer.x * cols - b.cols / 2);
+    const r0 = Math.round(layer.y * rows - b.rows / 2);
+    for (let y = 0; y < b.rows; y++) {
+      const r = r0 + y;
+      if (r < 0 || r >= rows) continue;
+      for (let x = 0; x < b.cols; x++) {
+        const c = c0 + x;
+        if (c >= 0 && c < cols && b.cells[y * b.cols + x]) out[r * cols + c] = t;
+      }
+    }
+  });
+  return out;
+}
+
+/**
+ * Adds the background motif (under the pet) and text (over everything) to a
+ * smoothed pet grid where 0 = background. Each distinct decoration color becomes
+ * a palette entry with role 'decoration', unless it matches an existing yarn exactly.
+ */
+function decorate(grid: PatternGrid, gridSpec: GridSpec, settings: PatternSettings, blocks: (TextBlock | null)[]): PatternGrid {
+  const hasMotif = settings.background.motif !== 'none';
+  if (!hasMotif && settings.texts.length === 0) return grid;
+  const palette = [...grid.palette];
+  const cells = grid.cells.slice();
+  const indexFor = (hex: string) => {
+    const h = hex.toLowerCase();
+    const existing = palette.findIndex((c) => c.hex.toLowerCase() === h);
+    if (existing >= 0) return existing;
+    palette.push(makeColor(palette.length, hexToRgb(h), 'decoration'));
+    return palette.length - 1;
+  };
+  if (hasMotif) {
+    const ink = backgroundInk(settings.background, gridSpec);
+    const k = indexFor(settings.background.colorHex);
+    for (let i = 0; i < cells.length; i++) if (cells[i] === 0 && ink[i]) cells[i] = k;
+  }
+  const text = placeTextBlocks(gridSpec, settings, blocks);
+  const textIndex = settings.texts.map((t) => indexFor(t.colorHex));
+  for (let i = 0; i < cells.length; i++) if (text[i] >= 0) cells[i] = textIndex[text[i]];
+  return { cols: grid.cols, rows: grid.rows, cells, palette };
+}
+
+/**
+ * Filet is one yarn, so decorations are filled squares too. A one-square open gap is
+ * kept around the pet and the text where they meet the motif, and text over the pet
+ * is cut out as open squares, so everything still reads.
+ */
+function decorateFilet(grid: PatternGrid, gridSpec: GridSpec, settings: PatternSettings, blocks: (TextBlock | null)[]): PatternGrid {
+  const hasMotif = settings.background.motif !== 'none';
+  if (!hasMotif && settings.texts.length === 0) return grid;
+  const { cols, rows } = gridSpec;
+  const pet = grid.cells;
+  const text = placeTextBlocks(gridSpec, settings, blocks);
+  const ink = hasMotif ? backgroundInk(settings.background, gridSpec) : new Uint8Array(pet.length);
+  const solid = (i: number) => pet[i] === 1 || text[i] >= 0;
+  const cells = new Uint8Array(pet.length);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const i = r * cols + c;
+      if (text[i] >= 0) {
+        cells[i] = pet[i] === 1 ? 0 : 1;
+      } else if (pet[i] === 1) {
+        cells[i] = 1;
+      } else if (ink[i]) {
+        let nearSolid = false;
+        for (let dy = -1; dy <= 1 && !nearSolid; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            const y = r + dy;
+            const x = c + dx;
+            if (y >= 0 && y < rows && x >= 0 && x < cols && solid(y * cols + x)) {
+              nearSolid = true;
+              break;
+            }
+          }
+        }
+        cells[i] = nearSolid ? 0 : 1;
+      }
+    }
+  }
+  return { cols, rows, cells, palette: grid.palette };
 }
 
 /** Drops unused colors (never the background), re-indexes cells and makes names unique. */
@@ -359,6 +453,7 @@ export function buildFiletGrid(
   gridSpec: GridSpec,
   settings: PatternSettings,
   lockedPalette: YarnColor[] = [],
+  textBlocks: (TextBlock | null)[] = [],
 ): PatternGrid {
   const s = resampleToCells(cutout, gridSpec, settings.framing);
   const { cols, rows } = gridSpec;
@@ -399,7 +494,7 @@ export function buildFiletGrid(
   const locked = lockedPalette.find((c) => c.role === 'subject' && c.userEdited);
   if (locked) yarn = { ...yarn, hex: locked.hex, name: locked.name, userEdited: true };
 
-  return smoothGrid({ cols, rows, cells, palette: [open, yarn] }, settings.smoothing);
+  return decorateFilet(smoothGrid({ cols, rows, cells, palette: [open, yarn] }, settings.smoothing), gridSpec, settings, textBlocks);
 }
 
 // ---------------------------------------------------------- smoothing ---

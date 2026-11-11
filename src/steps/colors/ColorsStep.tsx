@@ -1,47 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { isColorEdited, patternInputs, setPattern, updateSettings, useApp } from '../../app/state';
+import { usePatternBuild } from '../../app/usePatternBuild';
+import { isColorEdited, updateSettings, useApp } from '../../app/state';
 import { Segmented } from '../../components/Segmented';
 import { Slider } from '../../components/Slider';
 import { COLOR_COUNT } from '../../config/crochet';
-import { buildPattern } from '../../engine/buildPattern';
 import { renderPreview } from '../../engine/renderPreview';
-import type { CutoutImage, Pattern } from '../../types';
+import type { Pattern } from '../../types';
 import { ColorRow } from './ColorRow';
 import './ColorsStep.css';
 
-/** Rebuild this long after the last change. */
-const DEBOUNCE_MS = 150;
-
 export function ColorsStep() {
   const { state, dispatch } = useApp();
-  const { settings, lockedPalette, photo, mask } = state;
-  // Stable while the photo and mask are unchanged (getCutout would make a new object every render).
-  const cutout = useMemo<CutoutImage | null>(() => (photo && mask ? { image: photo, mask } : null), [photo, mask]);
-  const [shown, setShown] = useState<Pattern | null>(state.pattern);
+  const { settings, lockedPalette } = state;
+  const { shown, updating } = usePatternBuild();
   const [resetNote, setResetNote] = useState(false);
-  const firstBuild = useRef(true);
-
-  // Build on entry (straight away) and ~150 ms after each change.
-  useEffect(() => {
-    if (!cutout) return;
-    if (state.pattern) {
-      setShown(state.pattern);
-      firstBuild.current = false;
-      return;
-    }
-    const from = patternInputs(state);
-    const delay = firstBuild.current ? 0 : DEBOUNCE_MS;
-    firstBuild.current = false;
-    const t = window.setTimeout(() => {
-      const p = buildPattern(cutout, from.settings, from.lockedPalette);
-      dispatch(setPattern(p, from));
-    }, delay);
-    return () => window.clearTimeout(t);
-    // `state` is read only through these fields.
-  }, [cutout, settings, lockedPalette, state.pattern, dispatch]);
 
   const filet = settings.technique === 'decor-filet';
-  const updating = state.pattern === null;
 
   const shares = useMemo(() => {
     if (!shown) return [];
@@ -78,7 +52,7 @@ export function ColorsStep() {
         {!filet ? (
           <>
             <Slider
-              label="Colors (including background)"
+              label="Colors for your pet and background"
               min={COLOR_COUNT.min}
               max={COLOR_COUNT.max}
               value={settings.colorCount}
@@ -86,6 +60,9 @@ export function ColorsStep() {
               hint="Fewer colors are easier to crochet."
             />
             {resetNote && <p className="colors__note">Changing the number of colors resets your swaps.</p>}
+            {(settings.background.motif !== 'none' || settings.texts.length > 0) && (
+              <p className="colors__note">Pattern and text yarns from the Design step are added on top.</p>
+            )}
 
             <div className="colors__list-wrap">
               <h2 className="colors__heading">Your colors</h2>

@@ -141,8 +141,8 @@ Row tracker, saving projects between visits, left-handed mode, matching real yar
 - [x] Row 1 in the written rows matches the bottom chart row read right to left (spot-check three rows against the chart).
 - [x] Make another returns to a clean step 1.
 - [x] Full keyboard walk-through passes; both themes pass contrast; 360 px layout holds.
-- [ ] The GitHub Actions deploy succeeds and the live site works end to end, including the cutout model.
-- [ ] `npm run typecheck`, `npm test`, `npm run build` pass; all phases ticked in docs/README.md. *(Checks pass; Phase 4 is ticked once the live site is confirmed.)*
+- [x] The GitHub Actions deploy succeeds and the live site works end to end, including the cutout model. *(Verified on https://maridream.github.io/cozy-tapestry/: cutout 9.5 s with the model from Pages, pattern, PDF; nothing loaded from other sites. The first push-triggered run stuck in GitHub's queue; a manual re-run deployed.)*
+- [x] `npm run typecheck`, `npm test`, `npm run build` pass; all phases ticked in docs/README.md.
 
 ## Handoff notes
 
