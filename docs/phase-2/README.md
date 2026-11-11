@@ -106,7 +106,7 @@ Cropping/positioning (Phase 3 handles framing), background color choice (Phase 3
 ## Acceptance checklist
 
 - [x] Entering the step runs the cutout automatically with visible progress; the photo is never sent over the network (check the browser's Network tab: only model/asset downloads, no uploads).
-- [ ] The pet is clearly separated in the common cases above. *(Not yet checked with real pet photos — see handoff notes.)*
+- [x] The pet is clearly separated in the common cases above. *(Clear subjects: yes. Busy patterned or dim, caged backgrounds need the brush — see handoff notes.)*
 - [x] Keep/Erase painting works with mouse and touch; brush size changes; Undo/Redo/Start again work.
 - [x] With the network offline (after first load) or the model blocked, the fallback message and **Use whole photo** appear and the user can continue.
 - [x] Going Back to Photo and choosing a new photo re-runs the cutout; returning to Cutout with an existing mask does **not** re-run it.
@@ -124,5 +124,12 @@ Cropping/positioning (Phase 3 handles framing), background color choice (Phase 3
 - **For Phase 3:** use `getCutout(state)` from `src/app/state.tsx`. `src/segmentation/mask.ts` has `maskCoverage`, `resizeMaskBilinear`, `MASK_THRESHOLD` (127) you can reuse. `setMask` clears `pattern`.
 - **Fallback:** if the model fails to load or finds < 1% subject, the step shows the "couldn't find your pet" message and **Use whole photo**; an empty automatic mask is stored so returning to the step does not retry. Choosing a new photo retries with a fresh worker.
 - **Tested** (Chromium, synthetic images): dog-shaped subject on noisy grass, white subject on a light background, rotated phone photo, model blocked. Mouse drag, touch pointer, Undo/Redo buttons and Cmd/Ctrl+Z, Shift+Cmd/Ctrl+Z, Start again (with confirm), Original/Cutout toggle, keyboard-only fallback.
-- **Not yet tested with real pet photos** (the manual list above). Do this before relying on mask quality.
+- **Real photos (owner's pets, November 2026)** — the quantized model and the 88 MB fp16 model gave the same results, so the small one stays:
+  - Pigeon facing the camera, blurred room and a second pigeon behind: **excellent** (second pigeon correctly left out).
+  - Black-and-tan dog lying on grass: **good**; the leash and a few grass blades are kept.
+  - White pigeon held in a hand, dark sweater behind: **good**; part of the hand is kept.
+  - Grey pigeon in front of busy patterned wallpaper with toys: **weak** — a soft, half-strength mask over the bird *and* much of the wallpaper. Needs Keep/Erase.
+  - Dim video-call screenshot through cage bars: **fails** — mostly selects the orange food bowl. Needs painting from scratch (Erase the bowl, Keep the bird).
+  - Not tried: a 12 MP original, a rabbit or reptile.
+- **For Phase 3:** soft masks are common on hard photos (values in the 60–200 range over large areas). Threshold at `MASK_THRESHOLD` (127) when deciding pet vs background rather than treating the mask as an alpha blend.
 - **Security note:** `npm audit` reports a high-severity `zod` advisory (memory exhaustion validating oversized collections) via the library. `zod` only validates our own fixed config object here, so it is not reachable with user data. Revisit when IMG.LY updates.
