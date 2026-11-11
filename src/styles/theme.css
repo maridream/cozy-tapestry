@@ -1,0 +1,79 @@
+/*
+ * Design tokens for Cozy Tapestry.
+ *
+ * Two themes: "cottage" (light) and "fireside" (dark).
+ * - Default follows the device setting (prefers-color-scheme).
+ * - The header toggle (Phase 1) sets <html data-theme="cottage|fireside">,
+ *   which always wins over the device setting.
+ *
+ * Components must only use these variables — never hard-coded colors.
+ * Values are a starting point; Phase 1 may tune them but keeps the names.
+ */
+
+:root {
+  /* type */
+  --font-heading: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body: 'Nunito Variable', 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* shape & space */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --content-width: 960px;
+
+  /* cottage (light) */
+  --color-bg: #f7efe2;
+  --color-surface: #fffaf2;
+  --color-surface-sunken: #efe4d2;
+  --color-border: #dccbb2;
+  --color-text: #3b2f25;
+  --color-text-muted: #75655a;
+  --color-accent: #b85c38; /* terracotta */
+  --color-accent-hover: #9f4c2c;
+  --color-on-accent: #fffaf2;
+  --color-secondary: #7d8f69; /* sage */
+  --color-focus: #2f6f8f;
+  --color-danger: #a23b2d;
+  --shadow-card: 0 2px 10px rgb(90 60 30 / 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='cottage']) {
+    --color-bg: #241b16;
+    --color-surface: #30241d;
+    --color-surface-sunken: #1c1511;
+    --color-border: #4a392e;
+    --color-text: #f1e4d0;
+    --color-text-muted: #bfa98f;
+    --color-accent: #e0a458; /* amber */
+    --color-accent-hover: #edb872;
+    --color-on-accent: #241b16;
+    --color-secondary: #a3b18a;
+    --color-focus: #8fc7e0;
+    --color-danger: #e58a78;
+    --shadow-card: 0 2px 12px rgb(0 0 0 / 0.45);
+  }
+}
+
+:root[data-theme='fireside'] {
+  --color-bg: #241b16;
+  --color-surface: #30241d;
+  --color-surface-sunken: #1c1511;
+  --color-border: #4a392e;
+  --color-text: #f1e4d0;
+  --color-text-muted: #bfa98f;
+  --color-accent: #e0a458;
+  --color-accent-hover: #edb872;
+  --color-on-accent: #241b16;
+  --color-secondary: #a3b18a;
+  --color-focus: #8fc7e0;
+  --color-danger: #e58a78;
+  --shadow-card: 0 2px 12px rgb(0 0 0 / 0.45);
+}
