@@ -4,10 +4,14 @@ import {
   back,
   canGoToStep,
   clearPhoto,
+  getCutout,
   goToStep,
   initialState,
   isStepComplete,
   next,
+  resetMask,
+  setAutoMask,
+  setMask,
   setPhoto,
   type AppState,
 } from '../src/app/state';
@@ -17,6 +21,13 @@ import { fitScale, MAX_PHOTO_SIDE } from '../src/steps/upload/loadPhoto';
 const fakeImage = { width: 4, height: 3, data: new Uint8ClampedArray(48) } as unknown as ImageData;
 
 const withPhoto = (): AppState => appReducer(initialState, setPhoto(fakeImage, 'rex.jpg'));
+/** A 4×3 mask with `on` pixels set. */
+const maskWith = (on: number) => {
+  const m = new Uint8ClampedArray(12);
+  m.fill(255, 0, on);
+  return m;
+};
+const withCutout = (): AppState => appReducer(withPhoto(), setAutoMask(maskWith(6), fakeImage));
 
 describe('app reducer', () => {
   it('starts on the upload step with nothing complete', () => {
@@ -54,11 +65,13 @@ describe('app reducer', () => {
 
   it('next is blocked until the current step is complete', () => {
     expect(appReducer(initialState, next()).step).toBe('upload');
-    expect(appReducer(withPhoto(), next()).step).toBe('cutout');
+    const onCutout = appReducer(withPhoto(), next());
+    expect(onCutout.step).toBe('cutout');
+    expect(appReducer(onCutout, next()).step).toBe('cutout'); // no mask yet
   });
 
   it('next and back stay within bounds', () => {
-    let s = withPhoto();
+    let s = withCutout();
     for (let i = 0; i < 10; i++) s = appReducer(s, next());
     expect(s.step).toBe('pattern');
     for (let i = 0; i < 10; i++) s = appReducer(s, back());
@@ -68,9 +81,49 @@ describe('app reducer', () => {
   it('goToStep refuses a step beyond the first incomplete one', () => {
     expect(appReducer(initialState, goToStep('cutout')).step).toBe('upload');
     expect(appReducer(initialState, goToStep('pattern')).step).toBe('upload');
-    const s = appReducer(withPhoto(), goToStep('colors'));
+    expect(appReducer(withPhoto(), goToStep('colors')).step).toBe('upload'); // cutout not done yet
+    expect(appReducer(withPhoto(), goToStep('cutout')).step).toBe('cutout');
+    const s = appReducer(withCutout(), goToStep('colors'));
     expect(s.step).toBe('colors');
     expect(appReducer(s, goToStep('upload')).step).toBe('upload');
+  });
+});
+
+describe('cutout state', () => {
+  it('setAutoMask stores the mask and starts editing from a copy', () => {
+    const auto = maskWith(6);
+    const s = appReducer(withPhoto(), setAutoMask(auto, fakeImage));
+    expect(s.autoMask).toBe(auto);
+    expect(s.mask).not.toBe(auto);
+    expect(Array.from(s.mask!)).toEqual(Array.from(auto));
+    expect(getCutout(s)).toEqual({ image: fakeImage, mask: s.mask });
+  });
+
+  it('ignores an automatic cutout for a photo that has since changed', () => {
+    const otherPhoto = { width: 4, height: 3, data: new Uint8ClampedArray(48) } as unknown as ImageData;
+    const s = appReducer(withPhoto(), setAutoMask(maskWith(6), otherPhoto));
+    expect(s.autoMask).toBeNull();
+    expect(getCutout(s)).toBeNull();
+  });
+
+  it('setMask clears the pattern; resetMask restores the automatic cutout', () => {
+    const edited = maskWith(12);
+    const s = appReducer({ ...withCutout(), pattern: {} as AppState['pattern'] }, setMask(edited));
+    expect(s.mask).toBe(edited);
+    expect(s.pattern).toBeNull();
+    const r = appReducer(s, resetMask());
+    expect(Array.from(r.mask!)).toEqual(Array.from(maskWith(6)));
+    expect(r.mask).not.toBe(r.autoMask);
+  });
+
+  it('the cutout step needs at least 1% of pixels marked as pet', () => {
+    const big = { width: 100, height: 100, data: new Uint8ClampedArray(40000) } as unknown as ImageData;
+    const base = appReducer(initialState, setPhoto(big, 'big.jpg'));
+    const tiny = new Uint8ClampedArray(10000).fill(255, 0, 99); // 0.99%
+    const enough = new Uint8ClampedArray(10000).fill(255, 0, 100); // 1%
+    expect(isStepComplete(appReducer(base, setAutoMask(tiny, big)), 'cutout')).toBe(false);
+    expect(isStepComplete(appReducer(base, setAutoMask(enough, big)), 'cutout')).toBe(true);
+    expect(isStepComplete(base, 'cutout')).toBe(false);
   });
 });
 

@@ -41,6 +41,11 @@ src/export/         PDF export                             (Phase 4)
 tests/              Unit tests
 ```
 
+## Credits
+
+- Background removal: [`@imgly/background-removal`](https://github.com/imgly/background-removal-js) 1.7.0 by IMG.LY (AGPL-3.0), using the ISNet model (quantized, 44 MB) and [ONNX Runtime Web](https://github.com/microsoft/onnxruntime) 1.21.0 (MIT). The model files are served from this site (`public/models/imgly/`, fetched with `node scripts/fetch-model.mjs`); your photo is processed on your device and never uploaded.
+- Fonts: Fraunces and Nunito via Fontsource (SIL Open Font License 1.1).
+
 ## License
 
 [GNU AGPL v3.0 or later](LICENSE). You may use, change and share this code, but if you share or host a changed version you must publish its source under the same license. Third-party libraries and models keep their own licenses (listed under "Credits" once added).

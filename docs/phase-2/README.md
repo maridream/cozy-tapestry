@@ -105,14 +105,24 @@ Cropping/positioning (Phase 3 handles framing), background color choice (Phase 3
 
 ## Acceptance checklist
 
-- [ ] Entering the step runs the cutout automatically with visible progress; the photo is never sent over the network (check the browser's Network tab: only model/asset downloads, no uploads).
-- [ ] The pet is clearly separated in the common cases above.
-- [ ] Keep/Erase painting works with mouse and touch; brush size changes; Undo/Redo/Start again work.
-- [ ] With the network offline (after first load) or the model blocked, the fallback message and **Use whole photo** appear and the user can continue.
-- [ ] Going Back to Photo and choosing a new photo re-runs the cutout; returning to Cutout with an existing mask does **not** re-run it.
-- [ ] The model code is in its own chunk (`npm run build` output shows it separate from the main bundle).
-- [ ] `npm run typecheck`, `npm test`, `npm run build` pass.
+- [x] Entering the step runs the cutout automatically with visible progress; the photo is never sent over the network (check the browser's Network tab: only model/asset downloads, no uploads).
+- [ ] The pet is clearly separated in the common cases above. *(Not yet checked with real pet photos — see handoff notes.)*
+- [x] Keep/Erase painting works with mouse and touch; brush size changes; Undo/Redo/Start again work.
+- [x] With the network offline (after first load) or the model blocked, the fallback message and **Use whole photo** appear and the user can continue.
+- [x] Going Back to Photo and choosing a new photo re-runs the cutout; returning to Cutout with an existing mask does **not** re-run it.
+- [x] The model code is in its own chunk (`npm run build` output shows it separate from the main bundle).
+- [x] `npm run typecheck`, `npm test`, `npm run build` pass.
 
 ## Handoff notes
 
-_(Worker: library + version + model + license, hosting choice, known weak cases, anything Phase 3 should know about mask quality.)_
+- **Library:** `@imgly/background-removal` 1.7.0 (AGPL-3.0) with its peer `onnxruntime-web` 1.21.0 (MIT). **Model:** ISNet, quantized (`isnet_quint8`, 44.3 MB); the original ISNet/DIS weights are Apache-2.0, IMG.LY's converted files ship under the same AGPL repo. Runs on the CPU (WASM), single-threaded — GitHub Pages cannot send the cross-origin-isolation headers that multi-threading needs.
+- **Hosting:** self-hosted. `node scripts/fetch-model.mjs` downloads only the files we use (model + CPU runtime, 56 MB in 15 chunks of ≤ 4 MB, SHA-256-verified) into `public/models/imgly/`. Re-run it if the library version changes (update `VERSION` in the script). No third-party requests at runtime.
+- **Off the main thread:** the library runs inside our own Web Worker (`src/segmentation/segmenter.worker.ts`, ES-module worker — `worker.format: 'es'` in `vite.config.ts`). Measured: the longest main-thread stall during a cutout was 17 ms. This also satisfies "separate lazily loaded chunk": `segmenter-*.js` and `segmenter.worker-*.js` load only when the Cutout step is first reached.
+- **Deviation:** the spec suggested a dynamic `import()` of the library inside `createSegmenter`; the worker gives the same lazy chunk plus a responsive page. `vite.config.ts` aliases `onnxruntime-web` (and `/webgpu`) to `onnxruntime-web/wasm` so the unused GPU build and its 24 MB WASM are not copied into `dist/`.
+- **Timing:** ~8 s per photo on this Mac (download from localhost included on first run; ~7–8 s when cached — the model run dominates). The progress bar shows downloads up to 85%, then a striped "working" bar while the model runs (the library does not report progress during inference).
+- **Mask:** `state.mask` is full photo resolution, one byte per pixel, soft edges from the model (bilinear upscale from ≤ 1024 px). Brush edits are hard-edged 0/255. Masks in state are never mutated after being stored (undo keeps references), and `maskCoverage()` caches by array — keep it that way.
+- **For Phase 3:** use `getCutout(state)` from `src/app/state.tsx`. `src/segmentation/mask.ts` has `maskCoverage`, `resizeMaskBilinear`, `MASK_THRESHOLD` (127) you can reuse. `setMask` clears `pattern`.
+- **Fallback:** if the model fails to load or finds < 1% subject, the step shows the "couldn't find your pet" message and **Use whole photo**; an empty automatic mask is stored so returning to the step does not retry. Choosing a new photo retries with a fresh worker.
+- **Tested** (Chromium, synthetic images): dog-shaped subject on noisy grass, white subject on a light background, rotated phone photo, model blocked. Mouse drag, touch pointer, Undo/Redo buttons and Cmd/Ctrl+Z, Shift+Cmd/Ctrl+Z, Start again (with confirm), Original/Cutout toggle, keyboard-only fallback.
+- **Not yet tested with real pet photos** (the manual list above). Do this before relying on mask quality.
+- **Security note:** `npm audit` reports a high-severity `zod` advisory (memory exhaustion validating oversized collections) via the library. `zod` only validates our own fixed config object here, so it is not reachable with user data. Revisit when IMG.LY updates.

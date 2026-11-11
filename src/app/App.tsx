@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import { CutoutStep } from '../steps/cutout/CutoutStep';
 import { PlaceholderStep } from '../steps/PlaceholderStep';
 import { UploadStep } from '../steps/upload/UploadStep';
 import type { WizardStepId } from '../types';
@@ -13,7 +14,7 @@ export const REPO_URL = 'https://github.com/maridream/cozy-tapestry';
 /** Which screen each wizard step shows. Later phases replace the placeholders. */
 const STEP_SCREENS: Record<WizardStepId, ComponentType> = {
   upload: UploadStep,
-  cutout: PlaceholderStep,
+  cutout: CutoutStep,
   setup: PlaceholderStep,
   colors: PlaceholderStep,
   pattern: PlaceholderStep,

@@ -6,7 +6,8 @@ import {
   DEFAULT_YARN_WEIGHT,
 } from '../config/crochet';
 import { WIZARD_STEPS } from '../config/steps';
-import type { Pattern, PatternSettings, WizardStepId, YarnColor } from '../types';
+import { hasMeaningfulSubject } from '../segmentation/mask';
+import type { CutoutImage, Pattern, PatternSettings, WizardStepId, YarnColor } from '../types';
 
 // ----------------------------------------------------------------- state ---
 
@@ -55,13 +56,32 @@ export type AppAction =
   | { type: 'clearPhoto' }
   | { type: 'goToStep'; id: WizardStepId }
   | { type: 'next' }
-  | { type: 'back' };
+  | { type: 'back' }
+  | { type: 'setAutoMask'; mask: Uint8ClampedArray; forPhoto?: ImageData }
+  | { type: 'setMask'; mask: Uint8ClampedArray }
+  | { type: 'resetMask' };
 
 export const setPhoto = (image: ImageData, name: string): AppAction => ({ type: 'setPhoto', image, name });
 export const clearPhoto = (): AppAction => ({ type: 'clearPhoto' });
 export const goToStep = (id: WizardStepId): AppAction => ({ type: 'goToStep', id });
 export const next = (): AppAction => ({ type: 'next' });
 export const back = (): AppAction => ({ type: 'back' });
+/**
+ * Stores the automatic cutout (and starts editing from a copy of it).
+ * Pass the photo it was made from; the result is ignored if the photo has changed since.
+ */
+export const setAutoMask = (mask: Uint8ClampedArray, forPhoto?: ImageData): AppAction => ({ type: 'setAutoMask', mask, forPhoto });
+/** Commits an edited mask. The array must not be mutated afterwards. */
+export const setMask = (mask: Uint8ClampedArray): AppAction => ({ type: 'setMask', mask });
+/** Puts the automatic cutout back. */
+export const resetMask = (): AppAction => ({ type: 'resetMask' });
+
+// ------------------------------------------------------------- selectors ---
+
+/** The photo plus its edited mask, for the pattern engine (Phase 3). */
+export function getCutout(state: AppState): CutoutImage | null {
+  return state.photo && state.mask ? { image: state.photo, mask: state.mask } : null;
+}
 
 // ------------------------------------------------------------ step logic ---
 
@@ -77,9 +97,11 @@ export function isStepComplete(state: AppState, stepId: WizardStepId): boolean {
   switch (stepId) {
     case 'upload':
       return state.photo !== null;
-    // Phase 1 placeholders: complete once a photo exists.
-    // Phase 2 makes 'cutout' require a mask; Phase 3 'setup'/'colors'; Phase 4 'pattern'.
     case 'cutout':
+      return state.photo !== null && hasMeaningfulSubject(state.mask);
+    // Placeholders until their phase: complete once a photo exists. Steps after an
+    // incomplete one are unreachable anyway (see furthestReachableIndex).
+    // Phase 3 replaces 'setup'/'colors'; Phase 4 'pattern'.
     case 'setup':
     case 'colors':
     case 'pattern':
@@ -104,6 +126,8 @@ export function nextBlockedReason(state: AppState, stepId: WizardStepId): string
   switch (stepId) {
     case 'upload':
       return 'Add a photo to continue';
+    case 'cutout':
+      return state.mask === null ? 'Finding your pet…' : 'Paint over your pet with Keep to continue.';
     default:
       return 'Add a photo first';
   }
@@ -134,6 +158,14 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         lockedPalette: [],
         pattern: null,
       };
+    case 'setAutoMask':
+      if (action.forPhoto && action.forPhoto !== state.photo) return state; // stale result for an old photo
+      return { ...state, autoMask: action.mask, mask: action.mask.slice(), pattern: null };
+    case 'setMask':
+      return { ...state, mask: action.mask, pattern: null };
+    case 'resetMask':
+      if (!state.autoMask) return state;
+      return { ...state, mask: state.autoMask.slice(), pattern: null };
     case 'goToStep':
       if (action.id === state.step || !canGoToStep(state, action.id)) return state;
       return { ...state, step: action.id };
