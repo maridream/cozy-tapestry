@@ -39,3 +39,21 @@ describe('foundationChainLength', () => {
     expect(foundationChainLength(42, 'decor-filet')).toBe(87);
   });
 });
+
+describe('written rows match the chart', () => {
+  it('every row expands back to its chart row (RS right to left, WS left to right)', () => {
+    const cols = 23;
+    const rowsN = 17;
+    const cells = Array.from({ length: rowsN }, (_, r) => Array.from({ length: cols }, (_, c) => ((r * 7 + c * 3 + ((r * c) % 5)) % 4)));
+    const palette = ['cream', 'brown', 'black', 'tan'].map((n, i) => color(i, n, '#000000', i ? 'subject' : 'background'));
+    const grid = gridOf(cells, palette);
+    const written = buildWrittenRows(grid, 'blanket-sc');
+    for (const row of written) {
+      const expanded = row.runs.flatMap((r) => Array(r.count).fill(r.colorIndex));
+      const chartRow = cells[rowsN - row.rowNumber];
+      expect(expanded).toEqual(row.side === 'RS' ? [...chartRow].reverse() : chartRow);
+    }
+    expect(written[0].rowNumber).toBe(1);
+    expect(written[0].side).toBe('RS');
+  });
+});

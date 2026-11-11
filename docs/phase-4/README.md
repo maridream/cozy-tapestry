@@ -133,17 +133,26 @@ Row tracker, saving projects between visits, left-handed mode, matching real yar
 
 ## Acceptance checklist
 
-- [ ] Pattern step shows preview, facts, yarn table with skeins, and written rows in the form `12 dc green, 5 dc white`.
-- [ ] Changing yards per skein updates skein counts.
-- [ ] Download PDF produces a file that opens in Preview/Acrobat/Chrome with: cover + yarn list, overview map, chart pages with numbering and heavier lines every 10, written rows with tick boxes, page numbers.
-- [ ] A chart page printed in black and white is still usable (letters legible).
-- [ ] PDFs verified for all three techniques, for the smallest (1×1 ft) and largest (5×8 ft) sizes, in Letter and A4.
-- [ ] Row 1 in the written rows matches the bottom chart row read right to left (spot-check three rows against the chart).
-- [ ] Make another returns to a clean step 1.
-- [ ] Full keyboard walk-through passes; both themes pass contrast; 360 px layout holds.
+- [x] Pattern step shows preview, facts, yarn table with skeins, and written rows in the form `12 dc green, 5 dc white`.
+- [x] Changing yards per skein updates skein counts.
+- [x] Download PDF produces a file that opens in Preview/Acrobat/Chrome with: cover + yarn list, overview map, chart pages with numbering and heavier lines every 10, written rows with tick boxes, page numbers.
+- [x] A chart page printed in black and white is still usable (letters legible).
+- [x] PDFs verified for all three techniques, for the smallest (1×1 ft) and largest (5×8 ft) sizes, in Letter and A4.
+- [x] Row 1 in the written rows matches the bottom chart row read right to left (spot-check three rows against the chart).
+- [x] Make another returns to a clean step 1.
+- [x] Full keyboard walk-through passes; both themes pass contrast; 360 px layout holds.
 - [ ] The GitHub Actions deploy succeeds and the live site works end to end, including the cutout model.
-- [ ] `npm run typecheck`, `npm test`, `npm run build` pass; all phases ticked in docs/README.md.
+- [ ] `npm run typecheck`, `npm test`, `npm run build` pass; all phases ticked in docs/README.md. *(Checks pass; Phase 4 is ticked once the live site is confirmed.)*
 
 ## Handoff notes
 
-_(Worker: live URL, bundle sizes, known limitations, anything left for a future version.)_
+- **Live URL:** <https://maridream.github.io/cozy-tapestry/> (after the owner switches Pages to GitHub Actions — see D.3).
+- **Deploy:** `.github/workflows/deploy.yml` — `actions/checkout@v7`, `actions/setup-node@v7` (Node `lts/*`), `actions/configure-pages@v6`, `actions/upload-pages-artifact@v5`, `actions/deploy-pages@v5` (latest majors checked on GitHub, November 2026). Runs `npm ci`, `npm test`, `npm run build`. Verified locally that the build works from a sub-path (`vite preview --base /cozy-tapestry/`, launch config `subpath-test`): cutout model, worker, PDF and assets all load from `/cozy-tapestry/`, nothing off-site.
+- **Bundles:** main JS ~289 KB (~92 KB gzip) + fonts. Lazy: `segmenter` 1.5 KB + `segmenter.worker` 82 KB + ONNX Runtime 45 KB + model files 56 MB (Cutout step); `pdf` 9 KB + `jspdf` 399 KB (+ jsPDF's own optional html2canvas/purify/canvg chunks, never requested by us) on Download PDF.
+- **PDF:** `src/export/pdf.ts` (jsPDF 4.2.1, MIT, built-in Helvetica). Text goes through `safe()` because the built-in fonts only cover Latin-1 (em dashes become "-", emoji in color names are dropped). Page tiling is `planChartPages` in `src/export/chartLayout.ts` (tested): ~0.15 in cells, ≤ 50 columns per page; a chart that fits on one page uses bigger cells (up to 0.32 in). Times in Node: 0.9 s for 300 × 528 (65 Letter pages / 57 A4), < 0.15 s for 1 × 1 ft; 1.3–1.8 s in the browser including the preview image. All 12 combinations (3 techniques × 1 × 1 ft and 5 × 8 ft × Letter/A4) were generated and opened in PDFKit; cover, overview, chart (color and grayscale) and rows pages inspected.
+- **Shared wording:** `src/export/patternText.ts` (facts, gauge text, "How to read this", notes, symbols, file name) is used by both the Pattern page and the PDF, so they always say the same thing.
+- **State:** `setYardsPerSkein` updates skein counts in place (no rebuild); `resetAll` for Make another; the reducer now clamps the current step to the furthest reachable one, so no screen is ever shown without its inputs.
+- **Polish:** leave-page warning once a photo is loaded; "Pattern updated" announced to screen readers on the Colors step; technique names made consistent ("Full color", "Filet mesh"); footer link reads "Source code on GitHub" (AGPL source offer); share image `public/og-image.png` + Open Graph tags.
+- **Not verified:** Safari, Firefox and iOS Safari (only Chromium in the desktop app's browser was available); a real paper print. The live-site check is still to do after the first deploy.
+- **Dev note:** the first PDF download in `npm run dev` reloads the page once while Vite pre-bundles jsPDF. Production is not affected.
+- **Ideas for later** (from the plan): row tracker, saving projects, left-handed mode, real yarn brands, UK terms, sharing by link, multiple pets.

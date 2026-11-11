@@ -61,7 +61,16 @@ export function ColorsStep() {
       <div className="colors__preview">
         <Preview pattern={shown} />
         <p className={`colors__status ${updating ? 'is-updating' : ''}`} aria-live="polite">
-          {updating ? 'Updating…' : shown ? `${shown.gridSpec.cols} × ${shown.gridSpec.rows} ${filet ? 'squares' : 'stitches'}` : ''}
+          {updating ? (
+            'Updating…'
+          ) : shown ? (
+            <>
+              <span className="visually-hidden">Pattern updated: </span>
+              {`${shown.gridSpec.cols} × ${shown.gridSpec.rows} ${filet ? 'squares' : 'stitches'}`}
+            </>
+          ) : (
+            ''
+          )}
         </p>
       </div>
 

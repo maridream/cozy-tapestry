@@ -33,6 +33,19 @@
         "4173"
       ],
       "port": 4173
+    },
+    {
+      "name": "subpath-test",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "preview",
+        "--port",
+        "4174",
+        "--base",
+        "/cozy-tapestry/"
+      ],
+      "port": 4174
     }
   ]
 }

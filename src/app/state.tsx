@@ -66,7 +66,9 @@ export type AppAction =
   | { type: 'setFraming'; framing: Framing }
   | { type: 'editColor'; color: YarnColor }
   | { type: 'resetColor'; color: YarnColor }
-  | { type: 'setPattern'; pattern: Pattern; from: PatternInputs };
+  | { type: 'setPattern'; pattern: Pattern; from: PatternInputs }
+  | { type: 'setYardsPerSkein'; yards: number }
+  | { type: 'resetAll' };
 
 /** What a pattern was built from; a result for older inputs is ignored. */
 export interface PatternInputs {
@@ -103,6 +105,11 @@ export const resetColor = (color: YarnColor): AppAction => ({ type: 'resetColor'
 /** Stores a built pattern, but only if the inputs it was built from are still current. */
 export const setPattern = (pattern: Pattern, from: PatternInputs): AppAction => ({ type: 'setPattern', pattern, from });
 
+/** Changes skein size and updates skein counts in place (no rebuild needed). */
+export const setYardsPerSkein = (yards: number): AppAction => ({ type: 'setYardsPerSkein', yards });
+/** "Make another": back to a clean step 1. */
+export const resetAll = (): AppAction => ({ type: 'resetAll' });
+
 /** The inputs the next pattern build should use. */
 export function patternInputs(state: AppState): PatternInputs {
   return { mask: state.mask, settings: state.settings, lockedPalette: state.lockedPalette };
@@ -137,14 +144,10 @@ export function isStepComplete(state: AppState, stepId: WizardStepId): boolean {
       return state.photo !== null;
     case 'cutout':
       return state.photo !== null && hasMeaningfulSubject(state.mask);
-    // Placeholders until their phase: complete once a photo exists. Steps after an
-    // incomplete one are unreachable anyway (see furthestReachableIndex).
-    // Phase 3 replaces 'setup'/'colors'; Phase 4 'pattern'.
     case 'setup':
       return validateSize(state.settings.size).ok;
     case 'colors':
       return state.pattern !== null;
-    // Phase 4 replaces 'pattern'.
     case 'pattern':
       return state.pattern !== null;
   }
@@ -183,6 +186,13 @@ export function nextBlockedReason(state: AppState, stepId: WizardStepId): string
 // --------------------------------------------------------------- reducer ---
 
 export function appReducer(state: AppState, action: AppAction): AppState {
+  const result = reduce(state, action);
+  // Never sit on a step whose inputs are missing: fall back to the earliest incomplete one.
+  const furthest = furthestReachableIndex(result);
+  return stepIndex(result.step) > furthest ? { ...result, step: WIZARD_STEPS[furthest].id } : result;
+}
+
+function reduce(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'setPhoto':
       return {
@@ -265,6 +275,19 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       if (f.mask !== state.mask || f.settings !== state.settings || f.lockedPalette !== state.lockedPalette) return state; // stale build
       return { ...state, pattern: action.pattern };
     }
+    case 'setYardsPerSkein': {
+      const yards = Math.max(1, action.yards);
+      const settings = { ...state.settings, yardsPerSkein: yards };
+      const p = state.pattern;
+      const pattern = p && {
+        ...p,
+        settings,
+        estimate: { ...p.estimate, yardsPerSkein: yards, lines: p.estimate.lines.map((l) => ({ ...l, skeins: Math.ceil(l.yards / yards - 1e-9) })) },
+      };
+      return { ...state, settings, pattern };
+    }
+    case 'resetAll':
+      return initialState;
     case 'goToStep':
       if (action.id === state.step || !canGoToStep(state, action.id)) return state;
       return { ...state, step: action.id };

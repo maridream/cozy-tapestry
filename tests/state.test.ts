@@ -7,9 +7,11 @@ import {
   editColor,
   getCutout,
   patternInputs,
+  resetAll,
   resetColor,
   setFraming,
   setPattern,
+  setYardsPerSkein,
   updateSettings,
   goToStep,
   initialState,
@@ -189,5 +191,35 @@ describe('pattern settings state', () => {
     const changed = appReducer(s, updateSettings({ smoothing: 0 }));
     expect(appReducer(changed, setPattern(pattern, from)).pattern).toBeNull();
     expect(isStepComplete(appReducer(s, setPattern(pattern, from)), 'colors')).toBe(true);
+  });
+});
+
+describe('pattern step state', () => {
+  it('yards per skein updates skeins without clearing the pattern', async () => {
+    const { buildPattern } = await import('../src/engine/buildPattern');
+    const { makeCutout } = await import('./helpers');
+    const cut = makeCutout(60, 60, (x) => [120, 80, 40, x > 10 && x < 50 ? 255 : 0]);
+    let s: AppState = { ...appReducer(initialState, setPhoto(cut.image, 'p.png')), mask: cut.mask, step: 'pattern' as const };
+    s = { ...s, pattern: buildPattern(cut, s.settings) };
+    const before = s.pattern!.estimate.lines.map((l) => l.skeins);
+    const after = appReducer(s, setYardsPerSkein(50));
+    expect(after.pattern).not.toBeNull();
+    expect(after.step).toBe('pattern');
+    expect(after.settings.yardsPerSkein).toBe(50);
+    after.pattern!.estimate.lines.forEach((l, i) => {
+      expect(l.skeins).toBe(Math.ceil(l.yards / 50));
+      expect(l.skeins).toBeGreaterThanOrEqual(before[i]);
+    });
+  });
+
+  it('resetAll returns to a clean step 1', () => {
+    const s = appReducer({ ...withCutout(), step: 'colors' }, resetAll());
+    expect(s).toEqual(initialState);
+  });
+
+  it('never stays on a step whose inputs are missing', () => {
+    const onPattern: AppState = { ...withCutout(), step: 'pattern', pattern: {} as AppState['pattern'] };
+    // a settings change clears the pattern -> back to Colors, where it is rebuilt
+    expect(appReducer(onPattern, updateSettings({ smoothing: 0 })).step).toBe('colors');
   });
 });

@@ -1,7 +1,7 @@
-import type { ComponentType } from 'react';
+import { useEffect, type ComponentType } from 'react';
 import { ColorsStep } from '../steps/colors/ColorsStep';
 import { CutoutStep } from '../steps/cutout/CutoutStep';
-import { PlaceholderStep } from '../steps/PlaceholderStep';
+import { PatternStep } from '../steps/pattern/PatternStep';
 import { SetupStep } from '../steps/setup/SetupStep';
 import { UploadStep } from '../steps/upload/UploadStep';
 import type { WizardStepId } from '../types';
@@ -19,7 +19,7 @@ const STEP_SCREENS: Record<WizardStepId, ComponentType> = {
   cutout: CutoutStep,
   setup: SetupStep,
   colors: ColorsStep,
-  pattern: PlaceholderStep,
+  pattern: PatternStep,
 };
 
 export function App() {
@@ -33,6 +33,18 @@ export function App() {
 function Shell() {
   const { state } = useApp();
   const Screen = STEP_SCREENS[state.step];
+  const hasWork = state.photo !== null;
+
+  // Nothing is saved, so warn before leaving once there is work to lose.
+  useEffect(() => {
+    if (!hasWork) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [hasWork]);
   return (
     <div className="app">
       <a className="skip-link" href="#main">
@@ -48,7 +60,7 @@ function Shell() {
       <footer className="app__footer">
         <p>Your photo stays on your device.</p>
         <a href={REPO_URL} target="_blank" rel="noreferrer">
-          Cozy Tapestry on GitHub
+          Source code on GitHub
         </a>
       </footer>
     </div>

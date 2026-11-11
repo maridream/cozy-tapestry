@@ -15,11 +15,11 @@ export const TECHNIQUE_LABELS: Record<Technique, { title: string; blurb: string 
     blurb: 'Dense single crochet with colors carried inside. Warm, no holes, uses the most yarn.',
   },
   'decor-dc': {
-    title: 'Decorative tapestry — full color',
+    title: 'Decorative tapestry — Full color',
     blurb: 'Taller, looser double crochet. Drapes like a wall hanging and uses less yarn.',
   },
   'decor-filet': {
-    title: 'Decorative tapestry — filet mesh',
+    title: 'Decorative tapestry — Filet mesh',
     blurb: 'One yarn color. Your pet appears as solid blocks on an open, lacy mesh. Lightest of all.',
   },
 };
