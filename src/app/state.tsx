@@ -6,8 +6,10 @@ import {
   DEFAULT_YARN_WEIGHT,
 } from '../config/crochet';
 import { WIZARD_STEPS } from '../config/steps';
+import { subjectBounds } from '../engine/buildGrid';
+import { validateSize } from '../engine/sizing';
 import { hasMeaningfulSubject } from '../segmentation/mask';
-import type { CutoutImage, Pattern, PatternSettings, WizardStepId, YarnColor } from '../types';
+import type { CutoutImage, Framing, Pattern, PatternSettings, WizardStepId, YarnColor } from '../types';
 
 // ----------------------------------------------------------------- state ---
 
@@ -59,7 +61,19 @@ export type AppAction =
   | { type: 'back' }
   | { type: 'setAutoMask'; mask: Uint8ClampedArray; forPhoto?: ImageData }
   | { type: 'setMask'; mask: Uint8ClampedArray }
-  | { type: 'resetMask' };
+  | { type: 'resetMask' }
+  | { type: 'updateSettings'; partial: Partial<PatternSettings> }
+  | { type: 'setFraming'; framing: Framing }
+  | { type: 'editColor'; color: YarnColor }
+  | { type: 'resetColor'; color: YarnColor }
+  | { type: 'setPattern'; pattern: Pattern; from: PatternInputs };
+
+/** What a pattern was built from; a result for older inputs is ignored. */
+export interface PatternInputs {
+  mask: Uint8ClampedArray | null;
+  settings: PatternSettings;
+  lockedPalette: YarnColor[];
+}
 
 export const setPhoto = (image: ImageData, name: string): AppAction => ({ type: 'setPhoto', image, name });
 export const clearPhoto = (): AppAction => ({ type: 'clearPhoto' });
@@ -75,6 +89,30 @@ export const setAutoMask = (mask: Uint8ClampedArray, forPhoto?: ImageData): AppA
 export const setMask = (mask: Uint8ClampedArray): AppAction => ({ type: 'setMask', mask });
 /** Puts the automatic cutout back. */
 export const resetMask = (): AppAction => ({ type: 'resetMask' });
+/**
+ * Changes pattern settings. Changing the yarn weight resets yards per skein to that
+ * weight's default; changing the number of colors (or switching to/from filet)
+ * drops hand-edited pet colors.
+ */
+export const updateSettings = (partial: Partial<PatternSettings>): AppAction => ({ type: 'updateSettings', partial });
+export const setFraming = (framing: Framing): AppAction => ({ type: 'setFraming', framing });
+/** Stores a hand-edited color (pet colors go to lockedPalette; the background also sets backgroundHex). */
+export const editColor = (color: YarnColor): AppAction => ({ type: 'editColor', color });
+/** Puts a color back to the automatic pick. Takes the palette entry (matched by role + autoHex). */
+export const resetColor = (color: YarnColor): AppAction => ({ type: 'resetColor', color });
+/** Stores a built pattern, but only if the inputs it was built from are still current. */
+export const setPattern = (pattern: Pattern, from: PatternInputs): AppAction => ({ type: 'setPattern', pattern, from });
+
+/** The inputs the next pattern build should use. */
+export function patternInputs(state: AppState): PatternInputs {
+  return { mask: state.mask, settings: state.settings, lockedPalette: state.lockedPalette };
+}
+
+/** Whether a color in the current pattern was edited by hand (shows "Reset"). */
+export function isColorEdited(state: AppState, color: YarnColor): boolean {
+  if (color.role === 'background') return state.settings.backgroundHex !== DEFAULT_BACKGROUND_HEX || state.lockedPalette.some((c) => c.role === 'background');
+  return color.userEdited;
+}
 
 // ------------------------------------------------------------- selectors ---
 
@@ -103,9 +141,12 @@ export function isStepComplete(state: AppState, stepId: WizardStepId): boolean {
     // incomplete one are unreachable anyway (see furthestReachableIndex).
     // Phase 3 replaces 'setup'/'colors'; Phase 4 'pattern'.
     case 'setup':
+      return validateSize(state.settings.size).ok;
     case 'colors':
+      return state.pattern !== null;
+    // Phase 4 replaces 'pattern'.
     case 'pattern':
-      return state.photo !== null;
+      return state.pattern !== null;
   }
 }
 
@@ -128,6 +169,12 @@ export function nextBlockedReason(state: AppState, stepId: WizardStepId): string
       return 'Add a photo to continue';
     case 'cutout':
       return state.mask === null ? 'Finding your pet…' : 'Paint over your pet with Keep to continue.';
+    case 'setup': {
+      const check = validateSize(state.settings.size);
+      return check.ok ? null : 'Choose a size that fits to continue';
+    }
+    case 'colors':
+      return 'Making your pattern…';
     default:
       return 'Add a photo first';
   }
@@ -160,12 +207,64 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       };
     case 'setAutoMask':
       if (action.forPhoto && action.forPhoto !== state.photo) return state; // stale result for an old photo
-      return { ...state, autoMask: action.mask, mask: action.mask.slice(), pattern: null };
+      return {
+        ...state,
+        autoMask: action.mask,
+        mask: action.mask.slice(),
+        settings: orientToSubject(state.settings, action.mask, state.photo),
+        pattern: null,
+      };
     case 'setMask':
       return { ...state, mask: action.mask, pattern: null };
     case 'resetMask':
       if (!state.autoMask) return state;
       return { ...state, mask: state.autoMask.slice(), pattern: null };
+    case 'updateSettings': {
+      const prev = state.settings;
+      const settings = { ...prev, ...action.partial };
+      if (action.partial.yarnWeight && action.partial.yarnWeight !== prev.yarnWeight && action.partial.yardsPerSkein === undefined) {
+        settings.yardsPerSkein = DEFAULT_YARDS_PER_SKEIN[settings.yarnWeight];
+      }
+      const filetSwitched = (prev.technique === 'decor-filet') !== (settings.technique === 'decor-filet');
+      const lockedPalette =
+        settings.colorCount !== prev.colorCount || filetSwitched ? state.lockedPalette.filter((c) => c.role === 'background') : state.lockedPalette;
+      return { ...state, settings, lockedPalette, pattern: null };
+    }
+    case 'setFraming':
+      return { ...state, settings: { ...state.settings, framing: action.framing }, pattern: null };
+    case 'editColor': {
+      const c = { ...action.color, userEdited: true };
+      if (c.role === 'background') {
+        return {
+          ...state,
+          settings: { ...state.settings, backgroundHex: c.hex },
+          lockedPalette: [...state.lockedPalette.filter((l) => l.role !== 'background'), c],
+          pattern: null,
+        };
+      }
+      return {
+        ...state,
+        lockedPalette: [...state.lockedPalette.filter((l) => !(l.role === 'subject' && l.autoHex === c.autoHex)), c],
+        pattern: null,
+      };
+    }
+    case 'resetColor': {
+      const c = action.color;
+      if (c.role === 'background') {
+        return {
+          ...state,
+          settings: { ...state.settings, backgroundHex: DEFAULT_BACKGROUND_HEX },
+          lockedPalette: state.lockedPalette.filter((l) => l.role !== 'background'),
+          pattern: null,
+        };
+      }
+      return { ...state, lockedPalette: state.lockedPalette.filter((l) => !(l.role === 'subject' && l.autoHex === c.autoHex)), pattern: null };
+    }
+    case 'setPattern': {
+      const f = action.from;
+      if (f.mask !== state.mask || f.settings !== state.settings || f.lockedPalette !== state.lockedPalette) return state; // stale build
+      return { ...state, pattern: action.pattern };
+    }
     case 'goToStep':
       if (action.id === state.step || !canGoToStep(state, action.id)) return state;
       return { ...state, step: action.id };
@@ -180,6 +279,17 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, step: WIZARD_STEPS[i - 1].id };
     }
   }
+}
+
+/** Portrait for a pet taller than wide, landscape otherwise (square sizes are left alone). */
+function orientToSubject(settings: PatternSettings, mask: Uint8ClampedArray, photo: ImageData | null): PatternSettings {
+  const { width, height } = settings.size;
+  if (!photo || width === height) return settings;
+  const b = subjectBounds(mask, photo.width, photo.height);
+  const tall = b.y1 - b.y0 >= b.x1 - b.x0;
+  const portrait = height > width;
+  if (tall === portrait) return settings;
+  return { ...settings, size: { width: height, height: width } };
 }
 
 // --------------------------------------------------------------- context ---

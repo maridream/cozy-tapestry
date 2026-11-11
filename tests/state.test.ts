@@ -4,7 +4,13 @@ import {
   back,
   canGoToStep,
   clearPhoto,
+  editColor,
   getCutout,
+  patternInputs,
+  resetColor,
+  setFraming,
+  setPattern,
+  updateSettings,
   goToStep,
   initialState,
   isStepComplete,
@@ -73,6 +79,9 @@ describe('app reducer', () => {
   it('next and back stay within bounds', () => {
     let s = withCutout();
     for (let i = 0; i < 10; i++) s = appReducer(s, next());
+    expect(s.step).toBe('colors'); // needs a pattern to go further
+    s = { ...s, pattern: {} as AppState['pattern'] };
+    for (let i = 0; i < 10; i++) s = appReducer(s, next());
     expect(s.step).toBe('pattern');
     for (let i = 0; i < 10; i++) s = appReducer(s, back());
     expect(s.step).toBe('upload');
@@ -133,5 +142,52 @@ describe('photo downscaling', () => {
     expect(fitScale(MAX_PHOTO_SIDE, 10)).toBe(1);
     expect(fitScale(4096, 3072)).toBeCloseTo(0.5);
     expect(Math.round(3000 * fitScale(3000, 4000))).toBe(1536);
+  });
+});
+
+describe('pattern settings state', () => {
+  const pattern = {} as NonNullable<AppState['pattern']>;
+  const subjectColor = { id: 'c1', name: 'brown', hex: '#8b5a2b', role: 'subject' as const, userEdited: false, autoHex: '#8b5a2b' };
+  const bgColor = { id: 'c0', name: 'cream', hex: '#f3e9d8', role: 'background' as const, userEdited: false, autoHex: '#f3e9d8' };
+
+  it('any settings change clears the pattern', () => {
+    const s = { ...withCutout(), pattern };
+    expect(appReducer(s, updateSettings({ smoothing: 2 })).pattern).toBeNull();
+    expect(appReducer(s, setFraming({ zoom: 1.5, offsetX: 0, offsetY: 0 })).pattern).toBeNull();
+    expect(appReducer(s, editColor({ ...subjectColor, hex: '#000000' })).pattern).toBeNull();
+  });
+
+  it('changing yarn weight resets yards per skein', () => {
+    const s = appReducer(withCutout(), updateSettings({ yarnWeight: 'bulky' }));
+    expect(s.settings.yardsPerSkein).toBe(120);
+  });
+
+  it('setup needs a valid size', () => {
+    expect(isStepComplete(withCutout(), 'setup')).toBe(true);
+    expect(isStepComplete(appReducer(withCutout(), updateSettings({ size: { width: 6, height: 36 } })), 'setup')).toBe(false);
+  });
+
+  it('pet color edits are kept by a Detail change and cleared by a color-count change', () => {
+    let s = appReducer(withCutout(), editColor({ ...subjectColor, hex: '#ff0000', name: 'red yarn' }));
+    expect(s.lockedPalette).toHaveLength(1);
+    expect(appReducer(s, updateSettings({ smoothing: 0 })).lockedPalette).toHaveLength(1);
+    expect(appReducer(s, updateSettings({ colorCount: 6 })).lockedPalette).toHaveLength(0);
+    s = appReducer(s, resetColor(subjectColor));
+    expect(s.lockedPalette).toHaveLength(0);
+  });
+
+  it('editing the background sets backgroundHex; reset restores the default', () => {
+    const s = appReducer(withCutout(), editColor({ ...bgColor, hex: '#223344' }));
+    expect(s.settings.backgroundHex).toBe('#223344');
+    expect(appReducer(s, resetColor(bgColor)).settings.backgroundHex).toBe(initialState.settings.backgroundHex);
+  });
+
+  it('setPattern ignores a build for inputs that have changed since', () => {
+    const s = withCutout();
+    const from = patternInputs(s);
+    expect(appReducer(s, setPattern(pattern, from)).pattern).toBe(pattern);
+    const changed = appReducer(s, updateSettings({ smoothing: 0 }));
+    expect(appReducer(changed, setPattern(pattern, from)).pattern).toBeNull();
+    expect(isStepComplete(appReducer(s, setPattern(pattern, from)), 'colors')).toBe(true);
   });
 });

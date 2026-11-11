@@ -256,16 +256,22 @@ The Pattern step UI, PDF, written-rows display, deployment (all Phase 4). Real y
 
 ## Acceptance checklist
 
-- [ ] All engine tests pass; fixtures above match exactly (yardage within 0.1 yd).
-- [ ] Type & size: switching technique, weight, size and orientation updates the summary line; invalid custom sizes are explained and block Next.
-- [ ] Dragging and zooming the pet in the framing preview changes where it appears in the Colors preview.
-- [ ] Colors: the slider changes the number of colors in the preview; editing a color updates the preview and survives a Detail change; Reset restores the auto color.
-- [ ] The decorative full-color preview is visibly made of tall cells; the filet preview shows holes.
-- [ ] A 5 × 8 ft DK blanket builds without freezing the page.
-- [ ] Going back to Cutout, editing the mask, and returning rebuilds the pattern.
-- [ ] Works at 360 px wide and with keyboard only (framing via arrow keys).
-- [ ] `npm run typecheck`, `npm test`, `npm run build` pass.
+- [x] All engine tests pass; fixtures above match exactly (yardage within 0.1 yd).
+- [x] Type & size: switching technique, weight, size and orientation updates the summary line; invalid custom sizes are explained and block Next.
+- [x] Dragging and zooming the pet in the framing preview changes where it appears in the Colors preview.
+- [x] Colors: the slider changes the number of colors in the preview; editing a color updates the preview and survives a Detail change; Reset restores the auto color.
+- [x] The decorative full-color preview is visibly made of tall cells; the filet preview shows holes.
+- [x] A 5 × 8 ft DK blanket builds without freezing the page.
+- [x] Going back to Cutout, editing the mask, and returning rebuilds the pattern.
+- [x] Works at 360 px wide and with keyboard only (framing via arrow keys).
+- [x] `npm run typecheck`, `npm test`, `npm run build` pass.
 
 ## Handoff notes
 
-_(Worker: any formula deviations, measured build times, whether a Web Worker was needed, names of exported helpers Phase 4 should use.)_
+- **Build time:** `buildPattern` for 300 × 528 (5 × 8 ft DK, 8 colors, Smooth) from a 2048 × 1536 image takes **~77 ms** in Node on this Mac; in the browser the Colors preview appears ~390 ms after pressing Next (including the first render). **No Web Worker needed**; the Colors step builds on the main thread with a 150 ms debounce (immediately on entry).
+- **Use these in Phase 4:** `state.pattern` (`Pattern`), `buildWrittenRows` / `rowStitchCount` / `foundationChainLength` (`engine/writtenRows.ts`), `renderPreview(canvas, grid, gridSpec, technique, { gridLines, cssWidth, maxCssHeight })` and `renderPreviewToBlob(grid, gridSpec, technique, widthPx)` (`engine/renderPreview.ts`), `uniqueNames` / `nameColor` (`engine/color.ts`), `isColorEdited(state, color)` (`app/state.tsx`).
+- **State added:** `updateSettings`, `setFraming`, `editColor`, `resetColor`, `setPattern(pattern, from)` + `patternInputs(state)`. `setPattern` ignores a build whose mask/settings/lockedPalette are no longer current (prevents a slow stale build from landing). `resetColor` takes the palette entry (not just the id) because ids are re-assigned on every build; edits are matched by `role` + `autoHex`.
+- **Small additions beyond the spec:** `buildFiletGrid` takes an optional `lockedPalette` (so the filet yarn color can be edited); `subjectBounds` and `framingGeometry` are exported from `buildGrid.ts` and shared by the framing preview, so the preview and the chart place the pet identically; `uniqueNames(names, lightness?)` takes optional lightness to produce "light grey" / "dark grey"; `filetBacking()` in `renderPreview.ts`.
+- **Deviations:** switching between filet and the other techniques also clears pet color edits (like changing the color count), since a filet yarn color doesn't map onto a multi-color palette. Orientation defaults to the pet's bounding box when the automatic cutout arrives (`setAutoMask`). The filet preview shows open squares over the chosen **background color**, or a contrasting neutral when the yarn is too close to it — the theme surface made dark yarn invisible in the fireside theme.
+- **Naming:** `nameColor` treats warm colors with chroma < 40 and L ≥ 55 as cream / beige / tan (a dog's tan markings were "golden yellow" with the stricter limit).
+- **Tested in the browser** with the owner's dog photo: all technique/weight/size/orientation combinations update the summary (matching the reference table); invalid custom size blocks Next with "The longest side can be up to 8 ft."; arrow keys move the pet 2% per press and zoom carries through to the Colors preview exactly; color count 2/6/8; color edit → preview, survives Detail change, Reset; rename; tall dc cells; filet holes; 300 × 528 build; mask edit → rebuild; 360 px with no overflow; keyboard tab order.

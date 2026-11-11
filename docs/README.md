@@ -20,7 +20,7 @@ This folder is the complete plan. Each phase is written so that a worker who has
 | 0 | Git repository, GitHub remote, first push | [phase-0](phase-0/README.md) | ☑ |
 | 1 | Cozy app shell: themes, step-by-step wizard, photo upload | [phase-1](phase-1/README.md) | ☑ |
 | 2 | Automatic pet cutout + touch-up brush | [phase-2](phase-2/README.md) | ☑ |
-| 3 | Pattern engine + "Type & size" and "Colors" steps | [phase-3](phase-3/README.md) | ☐ |
+| 3 | Pattern engine + "Type & size" and "Colors" steps | [phase-3](phase-3/README.md) | ☑ |
 | 4 | Pattern page, PDF export, polish, publish to GitHub Pages | [phase-4](phase-4/README.md) | ☐ |
 
 Phases must be done in order: each one depends on the one before.

@@ -1,6 +1,8 @@
 import type { ComponentType } from 'react';
+import { ColorsStep } from '../steps/colors/ColorsStep';
 import { CutoutStep } from '../steps/cutout/CutoutStep';
 import { PlaceholderStep } from '../steps/PlaceholderStep';
+import { SetupStep } from '../steps/setup/SetupStep';
 import { UploadStep } from '../steps/upload/UploadStep';
 import type { WizardStepId } from '../types';
 import { Header } from './Header';
@@ -15,8 +17,8 @@ export const REPO_URL = 'https://github.com/maridream/cozy-tapestry';
 const STEP_SCREENS: Record<WizardStepId, ComponentType> = {
   upload: UploadStep,
   cutout: CutoutStep,
-  setup: PlaceholderStep,
-  colors: PlaceholderStep,
+  setup: SetupStep,
+  colors: ColorsStep,
   pattern: PlaceholderStep,
 };
 
