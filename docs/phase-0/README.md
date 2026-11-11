@@ -114,8 +114,15 @@ git push
 
 ## Acceptance checklist
 
-- [ ] `git log --oneline` shows the scaffold commit.
-- [ ] `git remote -v` shows the GitHub address.
-- [ ] The files are visible on github.com.
-- [ ] `node_modules/` is not in the repository.
-- [ ] Phase 0 is ticked in [docs/README.md](../README.md).
+- [x] `git log --oneline` shows the scaffold commit.
+- [x] `git remote -v` shows the GitHub address.
+- [x] The files are visible on github.com.
+- [x] `node_modules/` is not in the repository.
+- [x] Phase 0 is ticked in [docs/README.md](../README.md).
+
+## Handoff notes
+
+- Repository: <https://github.com/maridream/cozy-tapestry> (public), default branch `main`.
+- Commit identity is set per-repo (`git config user.name/user.email`), using the owner's GitHub noreply address — not global.
+- The GitHub CLI (`gh`) is installed and signed in as `maridream`, so `git push` works over HTTPS.
+- License not chosen yet — owner decides before Phase 2.
