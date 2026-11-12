@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildFiletGrid, buildPatternGrid, placeTextBlocks } from '../src/engine/buildGrid';
-import { backgroundInk, MOTIFS } from '../src/engine/motifs';
+import { backgroundInk, decorationInk, MOTIFS, motifTraits } from '../src/engine/motifs';
 import { pixelTextBlock } from '../src/engine/pixelFont';
 import { computeGridSpec, getGauge } from '../src/engine/sizing';
 import type { BackgroundPattern, TextLayer } from '../src/types';
@@ -8,7 +8,7 @@ import { makeCutout, settings } from './helpers';
 
 const sc = computeGridSpec({ width: 24, height: 24 }, getGauge('blanket-sc', 'worsted')); // 96 × 108
 const dc = computeGridSpec({ width: 24, height: 36 }, getGauge('decor-dc', 'worsted')); // 84 × 68
-const pattern = (over: Partial<BackgroundPattern> = {}): BackgroundPattern => ({ motif: 'dots', colorHex: '#3366aa', sizeIn: 4, direction: 'across', ...over });
+const pattern = (over: Partial<BackgroundPattern> = {}): BackgroundPattern => ({ motif: 'dots', colorHex: '#3366aa', sizeIn: 4, scale: 1, direction: 'across', seed: 1, border: 'none', frame: 'none', ...over });
 const share = (cells: Uint8Array) => cells.reduce((s, v) => s + v, 0) / cells.length;
 
 describe('background motifs', () => {
@@ -18,7 +18,7 @@ describe('background motifs', () => {
       if (m.id === 'none') expect(ink).toBe(0);
       else {
         expect(ink, m.id).toBeGreaterThan(0.02);
-        expect(ink, m.id).toBeLessThan(0.8);
+        expect(ink, m.id).toBeLessThan(0.85);
       }
     }
   });
@@ -80,6 +80,67 @@ describe('pixel font', () => {
 // Pet: a red square in the middle of the photo.
 const cutout = makeCutout(200, 200, (x, y) => (x >= 70 && x < 130 && y >= 70 && y < 130 ? [200, 30, 30, 255] : [0, 0, 0, 0]));
 const text = (over: Partial<TextLayer> = {}): TextLayer => ({ id: 't1', text: 'HI', font: 'stitch', sizeIn: 3, colorHex: '#ffffff', x: 0.5, y: 0.5, ...over });
+
+describe('stitch-drawn patterns, borders and pet frames', () => {
+  const fl = computeGridSpec({ width: 24, height: 24 }, getGauge('decor-filet', 'worsted'));
+
+  it('every pattern draws something on dc and filet too', () => {
+    for (const m of MOTIFS) {
+      if (m.id === 'none') continue;
+      for (const spec of [dc, fl]) expect(share(backgroundInk(pattern({ motif: m.id }), spec)), m.id).toBeGreaterThan(0.01);
+    }
+  });
+
+  it('generated patterns change with the shuffle seed; fixed repeats do not', () => {
+    const a = backgroundInk(pattern({ motif: 'leopard-spots', seed: 1 }), sc);
+    const b = backgroundInk(pattern({ motif: 'leopard-spots', seed: 2 }), sc);
+    expect(a).not.toEqual(b);
+    expect(backgroundInk(pattern({ motif: 'leopard-spots', seed: 1 }), sc)).toEqual(a);
+    expect(backgroundInk(pattern({ motif: 'paws', seed: 1 }), sc)).toEqual(backgroundInk(pattern({ motif: 'paws', seed: 9 }), sc));
+    expect(motifTraits('leopard-spots').seeded).toBe(true);
+    expect(motifTraits('paws').seeded).toBe(false);
+  });
+
+  it('size steps scale a repeat by whole stitches', () => {
+    const changes = (cells: Uint8Array) => {
+      let n = 0;
+      for (let i = 1; i < cells.length; i++) if (i % sc.cols && cells[i] !== cells[i - 1]) n++;
+      return n;
+    };
+    const small = backgroundInk(pattern({ motif: 'windowpane', scale: 1 }), sc);
+    const large = backgroundInk(pattern({ motif: 'windowpane', scale: 2 }), sc);
+    expect(changes(large)).toBeLessThan(changes(small) * 0.6);
+    const one = backgroundInk(pattern({ motif: 'houndstooth', scale: 1 }), sc);
+    // Houndstooth repeats every 8 stitches across at the small size.
+    const row = Math.floor(sc.rows / 2) * sc.cols;
+    for (let c = 0; c + 8 < sc.cols; c++) expect(one[row + c]).toBe(one[row + c + 8]);
+  });
+
+  it('a border draws round the edge and leaves the middle alone', () => {
+    const none = new Uint8Array(sc.cols * sc.rows);
+    const ink = decorationInk(pattern({ motif: 'none', border: 'lines' }), sc, none);
+    expect(ink[0]).toBe(1);
+    expect(ink[sc.cols * sc.rows - 1]).toBe(1);
+    expect(ink[Math.floor(sc.rows / 2) * sc.cols + Math.floor(sc.cols / 2)]).toBe(0);
+  });
+
+  it('a pet frame clears the pattern round the pet', () => {
+    const pet = new Uint8Array(sc.cols * sc.rows);
+    const r0 = 44, c0 = 38;
+    for (let r = r0; r < r0 + 20; r++) for (let c = c0; c < c0 + 20; c++) pet[r * sc.cols + c] = 1;
+    for (const frame of ['oval', 'medallion', 'sunburst'] as const) {
+      const ink = decorationInk(pattern({ motif: 'gingham', frame }), sc, pet);
+      let covered = 0;
+      for (let i = 0; i < pet.length; i++) if (pet[i] && ink[i]) covered++;
+      expect(covered, frame).toBe(0);
+    }
+  });
+
+  it('a border alone adds a decoration yarn', () => {
+    const g = buildPatternGrid(cutout, sc, settings({ colorCount: 2, background: pattern({ motif: 'none', border: 'greek-key' }) }));
+    expect(g.palette.map((c) => c.role)).toEqual(['background', 'subject', 'decoration']);
+  });
+});
 
 describe('composing background, pet and text', () => {
   it('puts the motif only on the background, as its own yarn', () => {

@@ -4,6 +4,7 @@ import { isColorEdited, updateSettings, useApp } from '../../app/state';
 import { Segmented } from '../../components/Segmented';
 import { Slider } from '../../components/Slider';
 import { COLOR_COUNT } from '../../config/crochet';
+import { hasDecoration } from '../../engine/motifs';
 import { renderPreview } from '../../engine/renderPreview';
 import type { Pattern } from '../../types';
 import { ColorRow } from './ColorRow';
@@ -60,7 +61,7 @@ export function ColorsStep() {
               hint="Fewer colors are easier to crochet."
             />
             {resetNote && <p className="colors__note">Changing the number of colors resets your swaps.</p>}
-            {(settings.background.motif !== 'none' || settings.texts.length > 0) && (
+            {(hasDecoration(settings.background) || settings.texts.length > 0) && (
               <p className="colors__note">Pattern and text yarns from the Design step are added on top.</p>
             )}
 

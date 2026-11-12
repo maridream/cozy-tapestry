@@ -4,9 +4,10 @@ import { usePatternBuild } from '../../app/usePatternBuild';
 import { Button } from '../../components/Button';
 import { Segmented } from '../../components/Segmented';
 import { Slider } from '../../components/Slider';
-import { MOTIFS } from '../../engine/motifs';
+import { hasDecoration, MOTIFS, motifTraits, type MotifGroup } from '../../engine/motifs';
+import { BORDER_WORDS, FRAME_WORDS } from '../../export/patternText';
 import { computeGridSpec, getGauge } from '../../engine/sizing';
-import type { GridSpec, MotifDirection, TextFont, TextLayer } from '../../types';
+import type { BorderStyle, GridSpec, MotifDirection, PetFrame, TextFont, TextLayer } from '../../types';
 import { DesignCanvas, type Selection } from './DesignCanvas';
 import { MotifSwatch } from './MotifSwatch';
 import { TEXT_FONTS, textBlock } from './textBlocks';
@@ -166,41 +167,129 @@ function MovePad({ label, onMove }: { label: string; onMove: (dx: number, dy: nu
   );
 }
 
+const SIZES: { value: '1' | '2' | '3'; label: string }[] = [
+  { value: '1', label: 'Small' },
+  { value: '2', label: 'Medium' },
+  { value: '3', label: 'Large' },
+];
+const BORDERS: { value: BorderStyle; label: string }[] = (Object.keys(BORDER_WORDS) as BorderStyle[]).map((value) => ({ value, label: BORDER_WORDS[value] }));
+const FRAMES: { value: PetFrame; label: string }[] = (Object.keys(FRAME_WORDS) as PetFrame[]).map((value) => ({ value, label: FRAME_WORDS[value] }));
+const newSeed = () => 1 + Math.floor(Math.random() * 2_000_000_000);
+
 function BackgroundControls({ filet }: { filet: boolean }) {
   const { state, dispatch } = useApp();
   const bg = state.settings.background;
   const groups = useMemo(() => {
-    const m = new Map<string, typeof MOTIFS[number][]>();
+    const m = new Map<MotifGroup, (typeof MOTIFS)[number][]>();
     for (const motif of MOTIFS) m.set(motif.group, [...(m.get(motif.group) ?? []), motif]);
     return [...m.entries()];
   }, []);
+  const currentGroup = MOTIFS.find((m) => m.id === bg.motif)?.group ?? 'Simple';
+  const [group, setGroup] = useState<MotifGroup>(currentGroup);
+  const shown = groups.find(([g]) => g === group) ?? groups[0];
+  const traits = motifTraits(bg.motif);
   const bgId = useId();
   const patId = useId();
+  const groupId = useId();
+  const borderId = useId();
+  const frameId = useId();
+  const anyYarn = hasDecoration(bg);
 
   return (
     <div className="bg-controls">
+      <label className="bg-controls__select" htmlFor={groupId}>
+        <span>Collection</span>
+        <select id={groupId} value={group} onChange={(e) => setGroup(e.target.value as MotifGroup)}>
+          {groups.map(([g, list]) => (
+            <option key={g} value={g}>
+              {g} ({list.length})
+            </option>
+          ))}
+        </select>
+      </label>
       <fieldset className="motifs">
-        <legend className="visually-hidden">Background pattern</legend>
-        {groups.map(([group, motifs]) => (
-          <div key={group} className="motifs__group">
-            <p className="motifs__group-title" aria-hidden="true">
-              {group}
-            </p>
-            <div className="motifs__grid">
-              {motifs.map((m) => (
-                <label key={m.id} className={`motif ${bg.motif === m.id ? 'is-checked' : ''}`}>
-                  <input type="radio" name="design-motif" checked={bg.motif === m.id} onChange={() => dispatch(setBackground({ motif: m.id }))} />
-                  <MotifSwatch motif={m.id} ink={filet ? '#3b2f25' : bg.colorHex} paper={filet ? '#ffffff' : state.settings.backgroundHex} />
-                  <span className="motif__label">
-                    {m.label}
-                    <span className="visually-hidden"> ({group})</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-        ))}
+        <legend className="visually-hidden">Background pattern: {group}</legend>
+        <div className="motifs__grid">
+          {shown[1].map((m) => (
+            <label key={m.id} className={`motif ${bg.motif === m.id ? 'is-checked' : ''}`}>
+              <input type="radio" name="design-motif" checked={bg.motif === m.id} onChange={() => dispatch(setBackground({ motif: m.id }))} />
+              <MotifSwatch motif={m.id} seed={bg.motif === m.id ? bg.seed : 1} ink={filet ? '#3b2f25' : bg.colorHex} paper={filet ? '#ffffff' : state.settings.backgroundHex} />
+              <span className="motif__label">{m.label}</span>
+            </label>
+          ))}
+        </div>
+        {group !== currentGroup && bg.motif !== 'none' && (
+          <p className="design__muted">
+            Current pattern: {MOTIFS.find((m) => m.id === bg.motif)?.label} ({currentGroup}).
+          </p>
+        )}
       </fieldset>
+
+      {bg.motif !== 'none' && (
+        <>
+          {traits.seeded && (
+            <div className="design__row">
+              <Button variant="secondary" onClick={() => dispatch(setBackground({ seed: newSeed() }))}>
+                Shuffle
+              </Button>
+              <span className="design__muted">This pattern is generated. Shuffle for a new version.</span>
+            </div>
+          )}
+          {traits.sized === 'inches' && (
+            <Slider
+              label="Pattern size"
+              min={1}
+              max={16}
+              step={0.5}
+              value={bg.sizeIn}
+              onChange={(sizeIn) => dispatch(setBackground({ sizeIn }))}
+              format={(v) => `${v} in repeat`}
+            />
+          )}
+          {traits.sized === 'steps' && (
+            <Segmented<'1' | '2' | '3'>
+              legend="Pattern size"
+              name="design-scale"
+              value={String(bg.scale ?? 1) as '1' | '2' | '3'}
+              onChange={(v) => dispatch(setBackground({ scale: Number(v) as 1 | 2 | 3 }))}
+              options={SIZES}
+              hint="Sizes step in whole stitches, so shapes stay crisp."
+            />
+          )}
+          {traits.sized === 'fills' && <p className="design__muted">This design is centred and fills the whole piece.</p>}
+          {traits.directional && (
+            <Segmented<MotifDirection> legend="Direction" name="design-direction" value={bg.direction} onChange={(direction) => dispatch(setBackground({ direction }))} options={DIRECTIONS} />
+          )}
+        </>
+      )}
+
+      <div className="bg-controls__layout">
+        <label className="bg-controls__select" htmlFor={borderId}>
+          <span>Border</span>
+          <select id={borderId} value={bg.border ?? 'none'} onChange={(e) => dispatch(setBackground({ border: e.target.value as BorderStyle }))}>
+            {BORDERS.map((b) => (
+              <option key={b.value} value={b.value}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="bg-controls__select" htmlFor={frameId}>
+          <span>Frame round your pet</span>
+          <select id={frameId} value={bg.frame ?? 'none'} onChange={(e) => dispatch(setBackground({ frame: e.target.value as PetFrame }))}>
+            {FRAMES.map((f) => (
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        {bg.frame === 'medallion' && !traits.seeded && (
+          <Button variant="quiet" onClick={() => dispatch(setBackground({ seed: newSeed() }))}>
+            Shuffle the ring
+          </Button>
+        )}
+      </div>
 
       <div className="bg-controls__colors">
         <label className="color-field" htmlFor={bgId}>
@@ -212,28 +301,13 @@ function BackgroundControls({ filet }: { filet: boolean }) {
           />
           <span>{filet ? 'Mesh preview color' : 'Background color'}</span>
         </label>
-        {bg.motif !== 'none' && !filet && (
+        {anyYarn && !filet && (
           <label className="color-field" htmlFor={patId}>
             <input id={patId} type="color" value={bg.colorHex} onChange={(e) => dispatch(setBackground({ colorHex: e.target.value }))} />
             <span>Pattern color</span>
           </label>
         )}
       </div>
-
-      {bg.motif !== 'none' && (
-        <>
-          <Slider
-            label="Pattern size"
-            min={1}
-            max={16}
-            step={0.5}
-            value={bg.sizeIn}
-            onChange={(sizeIn) => dispatch(setBackground({ sizeIn }))}
-            format={(v) => `${v} in repeat`}
-          />
-          <Segmented<MotifDirection> legend="Direction" name="design-direction" value={bg.direction} onChange={(direction) => dispatch(setBackground({ direction }))} options={DIRECTIONS} />
-        </>
-      )}
     </div>
   );
 }

@@ -38,7 +38,7 @@ export const DEFAULT_SETTINGS: PatternSettings = {
   backgroundHex: DEFAULT_BACKGROUND_HEX,
   smoothing: 1,
   yardsPerSkein: DEFAULT_YARDS_PER_SKEIN[DEFAULT_YARN_WEIGHT],
-  background: { motif: 'none', colorHex: '#b8c4a8', sizeIn: 4, direction: 'across' },
+  background: { motif: 'none', colorHex: '#b8c4a8', sizeIn: 4, scale: 1, direction: 'across', seed: 1, border: 'none', frame: 'none' },
   texts: [],
 };
 

@@ -23,6 +23,7 @@ This folder is the complete plan. Each phase is written so that a worker who has
 | 3 | Pattern engine + "Type & size" and "Colors" steps | [phase-3](phase-3/README.md) | ☑ |
 | 4 | Pattern page, PDF export, polish, publish to GitHub Pages | [phase-4](phase-4/README.md) | ☑ |
 | 5 | Design step: patterned backgrounds, text, placing the pet (added later) | [phase-5](phase-5/README.md) | ☑ |
+| 6 | Pattern library: stitch-drawn motifs, lace and doilies, animal prints, borders and pet frames (added later) | [phase-6](phase-6/README.md) | ☑ |
 
 Phases must be done in order: each one depends on the one before.
 

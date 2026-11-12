@@ -1,6 +1,6 @@
 import type { CutoutImage, Framing, GridSpec, PatternGrid, PatternSettings, Rgb, TextBlock, YarnColor } from '../types';
 import { hexToRgb, labDistanceSq, nameColor, rgbToHex, rgbToLab, uniqueNames, type Lab } from './color';
-import { backgroundInk } from './motifs';
+import { decorationInk, hasDecoration } from './motifs';
 
 /**
  * Photo + mask -> stitch chart. Pure functions, no DOM access (ImageData is
@@ -357,7 +357,7 @@ export function placeTextBlocks(gridSpec: GridSpec, settings: PatternSettings, b
  * a palette entry with role 'decoration', unless it matches an existing yarn exactly.
  */
 function decorate(grid: PatternGrid, gridSpec: GridSpec, settings: PatternSettings, blocks: (TextBlock | null)[]): PatternGrid {
-  const hasMotif = settings.background.motif !== 'none';
+  const hasMotif = hasDecoration(settings.background);
   if (!hasMotif && settings.texts.length === 0) return grid;
   const palette = [...grid.palette];
   const cells = grid.cells.slice();
@@ -369,7 +369,7 @@ function decorate(grid: PatternGrid, gridSpec: GridSpec, settings: PatternSettin
     return palette.length - 1;
   };
   if (hasMotif) {
-    const ink = backgroundInk(settings.background, gridSpec);
+    const ink = decorationInk(settings.background, gridSpec, grid.cells.map((v) => (v === 0 ? 0 : 1)));
     const k = indexFor(settings.background.colorHex);
     for (let i = 0; i < cells.length; i++) if (cells[i] === 0 && ink[i]) cells[i] = k;
   }
@@ -385,12 +385,12 @@ function decorate(grid: PatternGrid, gridSpec: GridSpec, settings: PatternSettin
  * is cut out as open squares, so everything still reads.
  */
 function decorateFilet(grid: PatternGrid, gridSpec: GridSpec, settings: PatternSettings, blocks: (TextBlock | null)[]): PatternGrid {
-  const hasMotif = settings.background.motif !== 'none';
+  const hasMotif = hasDecoration(settings.background);
   if (!hasMotif && settings.texts.length === 0) return grid;
   const { cols, rows } = gridSpec;
   const pet = grid.cells;
   const text = placeTextBlocks(gridSpec, settings, blocks);
-  const ink = hasMotif ? backgroundInk(settings.background, gridSpec) : new Uint8Array(pet.length);
+  const ink = hasMotif ? decorationInk(settings.background, gridSpec, pet.map((v) => (v === 1 ? 1 : 0))) : new Uint8Array(pet.length);
   const solid = (i: number) => pet[i] === 1 || text[i] >= 0;
   const cells = new Uint8Array(pet.length);
   for (let r = 0; r < rows; r++) {

@@ -173,7 +173,7 @@ export interface Framing {
 
 // ---------------------------------------------------------- decoration ---
 
-/** Background motifs. `none` = plain background. */
+/** Background patterns. `none` = plain background. */
 export type MotifId =
   | 'none'
   | 'dots'
@@ -196,18 +196,59 @@ export type MotifId =
   | 'leopard-spots'
   | 'carrots'
   | 'clover'
-  | 'horseshoes';
+  | 'horseshoes'
+  | 'houndstooth'
+  | 'gingham'
+  | 'chevron'
+  | 'herringbone'
+  | 'diamonds'
+  | 'windowpane'
+  | 'fair-isle'
+  | 'snowflakes'
+  | 'jaguar'
+  | 'cheetah'
+  | 'giraffe'
+  | 'zebra'
+  | 'cow'
+  | 'speckles'
+  | 'q-ohio-star'
+  | 'q-pinwheel'
+  | 'q-flying-geese'
+  | 'fair-isle-gen'
+  | 'greek-key'
+  | 'seigaiha'
+  | 'shippo'
+  | 'ogee'
+  | 'fans'
+  | 'honeycomb'
+  | 'truchet'
+  | 'basketweave'
+  | 'argyle'
+  | 'tartan'
+  | 'rings';
 
 /** Which way the motif rows run. */
 export type MotifDirection = 'across' | 'down' | 'diagonal' | 'diagonal-reverse';
+
+/** Band round the edge of the piece. */
+export type BorderStyle = 'none' | 'lines' | 'fair-isle' | 'scallops' | 'greek-key';
+
+/** Frame round the pet: clears the background near the pet and draws a ring, oval or sunburst. */
+export type PetFrame = 'none' | 'medallion' | 'oval' | 'sunburst';
 
 export interface BackgroundPattern {
   motif: MotifId;
   /** Yarn color of the motif; the plain background uses settings.backgroundHex. */
   colorHex: string;
-  /** Repeat size in inches (one motif plus its spacing). */
+  /** Repeat size in inches, for the simple geometric motifs (dots, stripes, zigzag, checks, seeds, bubbles, waves). */
   sizeIn: number;
+  /** Size step for every other pattern: whole multiples keep stitch-drawn shapes clean. */
+  scale: 1 | 2 | 3;
   direction: MotifDirection;
+  /** Shuffle seed for generated patterns (animal prints, Fair Isle maker, meander curves…). */
+  seed: number;
+  border: BorderStyle;
+  frame: PetFrame;
 }
 
 export type TextFont = 'stitch' | 'bold' | 'serif' | 'script' | 'chunky';

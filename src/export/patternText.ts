@@ -1,5 +1,5 @@
 import { YARN_WEIGHT_LABELS } from '../config/crochet';
-import { MOTIFS } from '../engine/motifs';
+import { MOTIFS, motifTraits } from '../engine/motifs';
 import type { Pattern, Technique } from '../types';
 
 /** Words shared by the Pattern page and the PDF, so both say exactly the same thing. */
@@ -41,14 +41,21 @@ export function patternFacts(p: Pattern): [string, string][] {
 }
 
 const DIRECTION_WORDS = { across: 'across', down: 'up and down', diagonal: 'diagonal', 'diagonal-reverse': 'diagonal' } as const;
+const SIZE_WORDS = { 1: 'small', 2: 'medium', 3: 'large' } as const;
+export const BORDER_WORDS = { none: 'None', lines: 'Double line', 'fair-isle': 'Fair Isle band', scallops: 'Scallops', 'greek-key': 'Greek key' } as const;
+export const FRAME_WORDS = { none: 'None', medallion: 'Medallion ring', oval: 'Oval lace frame', sunburst: 'Sunburst' } as const;
 
 function designFacts(p: Pattern): [string, string][] {
   const out: [string, string][] = [];
   const bg = p.settings.background;
   if (bg && bg.motif !== 'none') {
     const label = MOTIFS.find((m) => m.id === bg.motif)?.label ?? bg.motif;
-    out.push(['Background', `${label}, ${DIRECTION_WORDS[bg.direction]}, ${bg.sizeIn} in repeat`]);
+    const traits = motifTraits(bg.motif);
+    const size = traits.sized === 'inches' ? `${bg.sizeIn} in repeat` : traits.sized === 'steps' ? SIZE_WORDS[bg.scale ?? 1] : 'centred';
+    out.push(['Background', [label, traits.directional ? DIRECTION_WORDS[bg.direction] : null, size].filter(Boolean).join(', ')]);
   }
+  if (bg && (bg.border ?? 'none') !== 'none') out.push(['Border', BORDER_WORDS[bg.border]]);
+  if (bg && (bg.frame ?? 'none') !== 'none') out.push(['Pet frame', FRAME_WORDS[bg.frame]]);
   const texts = (p.settings.texts ?? []).filter((t) => t.text.trim());
   if (texts.length) out.push(['Text', texts.map((t) => `"${t.text.trim()}"`).join(', ')]);
   return out;
